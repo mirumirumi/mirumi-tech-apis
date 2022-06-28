@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: functions and apis
+
+
+Globals:
+  Function:
+    MemorySize: 128  # default
+    Timeout: 13
+    Layers:
+      - !Ref ImportModulesLayer
+      - !Ref UtilsLayer
+    Environment:
+      Variables:
+        API_ALLOW_ORIGIN: !Sub ${ApiAllowOrigin}
+
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Default: mirumitech
+  EnvironmentName:
+    Type: String
+    AllowedValues:
+      - dev
+      - prd
+  ApiAllowOrigin:
+    Type: String
+
+
+Resources:
+  RestApis:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${ResourcePrefix}-${EnvironmentName}
+      StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
+      Cors:
+        AllowOrigin: !Sub "'${ApiAllowOrigin}'"
+        AllowHeaders: "'Content-Type, X-Amz-Date, X-Api-Key, Authorization, X-Amz-Security-Token'"
+        AllowMethods: "'GET, POST, PUT, DELETE, OPTIONS'"
+
+  GetPostFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-get-post
+      CodeUri: functions/get_post
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      MemorySize: 512  # [TODO]: adjustment
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostTable
+      Environment:
+        Variables:
+          ENVIRONMENT_NAME: !Sub ${EnvironmentName}
+          POST_TABLE_NAME: !Ref PostTable
+      Events:
+        RestApis:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApis
+            Path: /get-post
+            Method: get
+  SearchPostFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-search-post
+      CodeUri: functions/search_post
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostTable
+      Environment:
+        Variables:
+          ENVIRONMENT_NAME: !Sub ${EnvironmentName}
+          POST_TABLE_NAME: !Ref PostTable
+      Events:
+        RestApis:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApis
+            Path: /search-post
+            Method: get
+
+  PostTable:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      TableName: !Sub ${ResourcePrefix}-${EnvironmentName}-post
+      KeySchema:
+        - AttributeName: slag
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: slag
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST 
+
+  ImportModulesLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: import modules containing PowerTools
+      ContentUri: "functions/layers/import_modules_layer/"
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
+  UtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: utils
+      ContentUri: "functions/layers/utils_layer/"
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
