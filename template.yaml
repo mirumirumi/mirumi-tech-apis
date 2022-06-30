@@ -20,7 +20,7 @@ Resources:
   FunctionsStack:
     Type: AWS::Serverless::Application
     Properties:
-      Location: templates/functions.yaml
+      Location: ./templates/functions.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         EnvironmentName: !Ref EnvironmentName
@@ -31,7 +31,7 @@ Resources:
   # BffStack:
   #   Type: AWS::Serverless::Application
   #   Properties:
-  #     Location: templates/bff.yaml
+  #     Location: ./templates/bff.yaml
   #     Parameters:
   #       ResourcePrefix: !Ref ResourcePrefix
   #       EnvironmentName: !Ref EnvironmentName

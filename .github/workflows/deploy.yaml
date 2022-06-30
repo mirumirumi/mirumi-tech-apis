@@ -3,7 +3,7 @@ name: deploy
 on:
   push:
     branches:
-      # - main
+      - main
       - release/prd
 
 jobs:
@@ -14,16 +14,16 @@ jobs:
       - uses: actions/setup-python@v2
       - uses: aws-actions/setup-sam@v1
 
-      - name: aws login
+      - name: setup aws account
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: ap-northeast-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: gpg secret
-        run: |
-          echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "functions/main/secret.py" --decrypt "functions/main/secret.py.gpg"
+      # - name: gpg secret
+      #   run: |
+      #     echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "functions/main/secret.py" --decrypt "functions/main/secret.py.gpg"
 
       - run: sam build --use-container
 
