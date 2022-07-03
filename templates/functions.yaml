@@ -38,6 +38,29 @@ Resources:
         AllowOrigin: !Sub "'${ApiAllowOrigin}'"
         AllowHeaders: "'Content-Type, X-Amz-Date, X-Api-Key, Authorization, X-Amz-Security-Token'"
         AllowMethods: "'GET, POST, PUT, DELETE, OPTIONS'"
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub ${ResourcePrefix}-${EnvironmentName}-api-key
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref RestApis
+          StageName:
+            !Sub ${ResourcePrefix}-${EnvironmentName}-apis
+  ApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Sub ${ResourcePrefix}-${EnvironmentName}-api-usage-plan
+      ApiStages:
+        - ApiId: !Ref RestApis
+          Stage:
+            !Sub ${ResourcePrefix}-${EnvironmentName}-apis
+  ApiUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties :
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref ApiUsagePlan
 
   GetTopIndexesFunction:
     Type: AWS::Serverless::Function
@@ -129,6 +152,33 @@ Resources:
             Path: /search-post
             Method: get
 
+  InsertContentWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-insert-content-webhook
+      CodeUri: ../functions/insert_content_webhook
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Layers:
+        - !Ref InsertContentWebhookLayer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostTable
+      Environment:
+        Variables:
+          POST_TABLE_NAME: !Ref PostTable
+      Events:
+        RestApis:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApis
+            Path: /insert-content-webhook
+            Method: post
+            Auth:
+              ApiKeyRequired: true
+
   PostTable:
     Type: AWS::DynamoDB::Table
     Properties: 
@@ -155,6 +205,15 @@ Resources:
     Properties:
       Description: utils
       ContentUri: ../functions/layers/utils_layer
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
+  InsertContentWebhookLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: for insert-content-webhook
+      ContentUri: ../functions/layers/insert_content_webhook_layer
       CompatibleRuntimes:
         - python3.9
     Metadata:
