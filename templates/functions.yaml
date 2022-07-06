@@ -161,6 +161,7 @@ Resources:
       Runtime: python3.9
       Architectures:
         - x86_64
+      Timeout: 90
       Layers:
         - !Ref InsertContentWebhookLayer
       Policies:
