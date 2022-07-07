@@ -19,6 +19,7 @@ post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 @logger.inject_lambda_context
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyResponse:
     logger.info(event)
+    
 
 
 
