@@ -11,14 +11,14 @@ JST = ZoneInfo("Asia/Tokyo")
 class Post:
     def __init__(self, slag: str, body: str) -> None:
         self.slag = slag
-        self.title = self.front_matter_title(body)
-        self.tags = self.front_matter_tags(body)
-        self.body = self.remove_front_matter(body)
+        self.title = self.__front_matter_title(body)
+        self.tags = self.__front_matter_tags(body)
+        self.body = self.__remove_front_matter(body)
         self.created_at = datetime.now(JST).isoformat()
         self.updated_at = datetime.now(JST).isoformat()
 
     @staticmethod
-    def front_matter_title(body_md: str) -> str:
+    def __front_matter_title(body_md: str) -> str:
         lines = body_md.splitlines()
         for line in lines:
             if (line.startswith("title")):
@@ -26,7 +26,7 @@ class Post:
         raise Exception("front matter of `title` was not found")
    
     @staticmethod
-    def front_matter_tags(body_md: str) -> list[str]:
+    def __front_matter_tags(body_md: str) -> list[str]:
         lines = body_md.splitlines()
         for line in lines:
             if (line.startswith("tags")):
@@ -34,7 +34,7 @@ class Post:
         raise Exception("front matter of `tags` was not found")
 
     @staticmethod
-    def remove_front_matter(body_md: str) -> str:
+    def __remove_front_matter(body_md: str) -> str:
         lines = body_md.splitlines()
         is_second_bar = False
         for i, line in enumerate(lines):

@@ -3,7 +3,6 @@ from typing import Any, cast, Final, Literal, TypedDict
 
 import os
 import re
-import json
 import boto3
 import secret
 import base64
@@ -28,7 +27,7 @@ JST = ZoneInfo("Asia/Tokyo")
 @logger.inject_lambda_context
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyResponse:
     logger.info(event)
-    changed_file_paths = json.loads(event["body"])["files"].split(" ")
+    changed_file_paths = event["body"].split(" ")
     logger.info(changed_file_paths)
 
     endpoint_base = "https://api.github.com/repos/mirumirumi/mirumi-tech-content/contents/posts/"
@@ -59,7 +58,11 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
             posts_to_insert.append(post)
 
     for post in posts_to_insert:
-        post.body = markdown2.markdown(post.body, extras=["fenced-code-blocks", "code-friendly"])
+        post.body = markdown2.markdown(post.body, extras={
+            "fenced-code-blocks": None,
+            "highlightjs-lang": None,
+            "code-friendly": None,
+        })
 
     for post in posts_to_insert:
         post.body = customize_html(post.body)
