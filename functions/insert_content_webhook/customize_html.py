@@ -1,7 +1,11 @@
 import re
+import urllib.parse
+from opengraph_py3 import OpenGraph
 
 
 def customize_html(html: str) -> str:
+    # remove `\n` except in code blocks
+    # html = remove_n(html)
 
     # add TOC attributes
     html = add_toc_attrs(html)
@@ -11,9 +15,11 @@ def customize_html(html: str) -> str:
 
 
 
+    return html
 
 
-
+# def remove_n(html: str) -> str:
+#     return
 
 
 def add_toc_attrs(html: str) -> str:
