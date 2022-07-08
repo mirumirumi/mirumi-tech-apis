@@ -29,35 +29,39 @@ def convert_to_blogcard(html: str) -> str:
     links = re.findall("(<p.*?>\[(https?://(.*?))\]<\/p>)", html) # https://regex101.com/r/7rZSTQ/1
 
     blogcard_tags = """
-        <div class="blogcard">
-            <div class="thumbnail">
-                <img src="##image##" alt="##title##" />
-            </div>
-            <div class="content">
-                <div class="title">
-                    ##title##
+        <a href="##fullpath##" class="blogcard" rel="noopener" target="_top">
+            <div class="blogcard">
+                <div class="thumbnail">
+                    <img src="##image##" alt="##title##" />
                 </div>
-                <div class="snippet">
-                    ##description##
-                </div>
-                <div class="footer">
-                    <div class="favicon">
-                        <img src="https://www.google.com/s2/favicons?domain=##domain##" alt="external-site-favicon" />
+                <div class="content">
+                    <div class="title">
+                        ##title##
                     </div>
-                    <div class="domain">
-                        ##domain##
+                    <div class="snippet">
+                        ##description##
+                    </div>
+                    <div class="footer">
+                        <div class="favicon">
+                            <img src="https://www.google.com/s2/favicons?domain=##domain##" alt="external-site-favicon" />
+                        </div>
+                        <div class="domain">
+                            ##domain##
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     """
 
     for link in links:
+        fullpath: str = link[1]
         image: str = OpenGraph(link[1])["image"]
         domain: str = re.sub("^(https?:\/\/)?([^\/]+).*$", "\\2", link[2])
         title: str = OpenGraph(link[1])["title"]
         description: str = OpenGraph(link[1])["description"]
 
+        blogcard_tags = blogcard_tags.replace("##fullpath##", fullpath)
         blogcard_tags = blogcard_tags.replace("##image##", image)
         blogcard_tags = blogcard_tags.replace("##domain##", domain)
         blogcard_tags = blogcard_tags.replace("##title##", title)
