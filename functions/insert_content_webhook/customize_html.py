@@ -13,6 +13,9 @@ def customize_html(html: str) -> str:
     # convert `[http(s)://~~~]` -> blog card
     html = convert_to_blogcard(html)
 
+    # convert `:::info/alert/rewrite` -> common box
+    html = convert_to_common_box(html)
+    
 
 
     return html
@@ -74,5 +77,22 @@ def convert_to_blogcard(html: str) -> str:
         blogcard_tags = blogcard_tags.replace("##description##", description)
 
         html = html.replace(link[0], blogcard_tags)
+
+    return html
+
+
+def convert_to_common_box(html: str) -> str:
+    boxes = re.findall("(<p>:::(info|alert|rewrite\s*\d+)\n*(.*?)<\/p>\n+((<p>.*?<\/p>\n+)*)\n+<p>(.*?)\n*:::<\/p>)", html)  # https://regex101.com/r/epW7pO/1
+    replace_to = ""
+
+    for box in boxes:
+        if box[1] == "info":
+            replace_to = "<div class=\"box-common box-info\">"
+        elif box[1] == "alert":
+            replace_to = "<div class=\"box-common box-alert\">"
+        elif "rewrite" in box[1]:
+            replace_to = "<div class=\"box-common box-rewrite\">"
+
+        html = html.replace(box[0], replace_to + "<p>" + box[2] + "</p>" + box[3] + "<p>" + box[5] + "</p>" + "</div>")
 
     return html
