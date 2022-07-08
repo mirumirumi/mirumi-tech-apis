@@ -1,11 +1,16 @@
 from __future__ import annotations
 from typing import Any, cast, Literal, TypedDict
 
+import os
 import re
+import boto3
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 JST = ZoneInfo("Asia/Tokyo")
+
+POST_TABLE_NAME = os.environ["POST_TABLE_NAME"]
+post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 
 
 class Post:
@@ -50,3 +55,13 @@ class Post:
                 except IndexError:
                     raise Exception("content body was not found")
         raise Exception("front matter was not found")
+
+    def is_already_exist(self) -> bool:
+        try:
+            res = post_table.get_item(Key={
+                "slag": self.slag,
+            })
+        except Exception as e:
+            raise Exception(f"something went wrong: {e}")
+
+        return "Item" in res

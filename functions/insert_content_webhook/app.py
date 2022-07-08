@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, cast, Final, Literal, TypedDict
+from typing import Any, cast, Literal, TypedDict
 
 import os
 import re
@@ -10,8 +10,6 @@ import requests
 import markdown2
 from Post import Post
 from proxy_response import *
-from datetime import datetime
-from zoneinfo import ZoneInfo
 from customize_html import customize_html
 from aws_lambda_powertools.logging import Logger
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -20,8 +18,6 @@ logger = Logger()
 
 POST_TABLE_NAME = os.environ["POST_TABLE_NAME"]
 post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
-
-JST = ZoneInfo("Asia/Tokyo")
 
 
 @logger.inject_lambda_context
@@ -68,27 +64,51 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
         post.body = customize_html(post.body)
 
     for post in posts_to_insert:
-        try:
-            post_table.update_item(
-                Key={
-                    "slag": post.slag,
-                },
-                UpdateExpression="""set 
-                    body = :body
-                """,
-                ExpressionAttributeValues={
-                    ":body": post.body,
-                },
-            )
-        except Exception as e:
-            logger.exception(e)
-            return s500()
-
-
-        # created_atについてだけ気をつけて！
-
-
-
-
+        if post.is_already_exist():  # only difference is the created_at
+            try:
+                post_table.update_item(
+                    Key={
+                        "slag": post.slag,
+                    },
+                    UpdateExpression="""set 
+                        title = :title,
+                        updated_at = :updated_at,
+                        tags = :tags,
+                        body = :body
+                    """,
+                    ExpressionAttributeValues={
+                        ":title": post.title,
+                        ":updated_at": post.updated_at,
+                        ":tags": post.tags,
+                        ":body": post.body,
+                    },
+                )
+            except Exception as e:
+                logger.exception(e)
+                return s500()
+        else:
+            try:
+                post_table.update_item(
+                    Key={
+                        "slag": post.slag,
+                    },
+                    UpdateExpression="""set 
+                        title = :title,
+                        created_at = :created_at,
+                        updated_at = :updated_at,
+                        tags = :tags,
+                        body = :body
+                    """,
+                    ExpressionAttributeValues={
+                        ":title": post.title,
+                        ":created_at": post.created_at,
+                        ":updated_at": post.updated_at,
+                        ":tags": post.tags,
+                        ":body": post.body,
+                    },
+                )
+            except Exception as e:
+                logger.exception(e)
+                return s500()
 
     return s200()
