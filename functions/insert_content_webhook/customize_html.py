@@ -16,7 +16,8 @@ def customize_html(html: str) -> str:
     # convert `:::info/alert/rewrite` -> common box
     html = convert_to_common_box(html)
     
-
+    # add date into rewrite box
+    html = add_date_into_rewritebox(html)
 
     return html
 
@@ -82,7 +83,7 @@ def convert_to_blogcard(html: str) -> str:
 
 
 def convert_to_common_box(html: str) -> str:
-    boxes = re.findall("(<p>:::(info|alert|rewrite\s*\d+)\n*(.*?)<\/p>\n+((<p>.*?<\/p>\n+)*)\n+<p>(.*?)\n*:::<\/p>)", html)  # https://regex101.com/r/epW7pO/1
+    boxes = re.findall("(<p>:::(info|alert|rewrite\s*\d+\/\d+\/\d+)\n*(.*?)<\/p>\n+((<p>.*?<\/p>\n+)*)\n+<p>(.*?)\n*:::<\/p>)", html)  # https://regex101.com/r/epW7pO/1
     replace_to = ""
 
     for box in boxes:
@@ -91,8 +92,17 @@ def convert_to_common_box(html: str) -> str:
         elif box[1] == "alert":
             replace_to = "<div class=\"box-common box-alert\">"
         elif "rewrite" in box[1]:
-            replace_to = "<div class=\"box-common box-rewrite\">"
+            replace_to = "<div class=\"box-common box-rewrite " + re.sub('rewrite\s*(\d+\/\d+\/\d+)', '\\1', box[1]) + "\">"
 
         html = html.replace(box[0], replace_to + "<p>" + box[2] + "</p>" + box[3] + "<p>" + box[5] + "</p>" + "</div>")
+
+    return html
+
+
+def add_date_into_rewritebox(html: str) -> str:
+    boxes = re.findall("(<div class=\"box-common box-rewrite (\d+\/\d+\/\d+)\"><p>)", html)
+
+    for box in boxes:
+        html = html.replace(box[0], box[0] + "<span class=\"rewrite-date\">追記 (" + box[1] + ") ：</span>")
 
     return html
