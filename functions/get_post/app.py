@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Any, cast, Literal, TypedDict
 
 import os
-import json
 import boto3
 from proxy_response import *
 from aws_lambda_powertools.logging import Logger
@@ -17,13 +16,14 @@ post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 @logger.inject_lambda_context
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyResponse:
     logger.info(event)
+    slag = event["queryStringParameters"]["slag"]
 
-
-
-
-
-
-
-
-
-    return
+    try:
+        res = post_table.get_item(Key={
+            "slag": slag,
+        })
+    except Exception as e:
+        logger.exception(e)
+        return s500()
+    
+    return s200(res["Item"])
