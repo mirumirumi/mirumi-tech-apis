@@ -15,7 +15,7 @@ post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 
 class Post:
     def __init__(self, slag: str, body: str) -> None:
-        self.slag = slag
+        self.slag = slag.replace(".md", "")
         self.title = self.__front_matter_title(body)
         self.tags = self.__front_matter_tags(body)
         self.body = self.__remove_front_matter(body)
