@@ -12,8 +12,6 @@ Parameters:
     AllowedValues:
       - dev
       - prd
-  ApiAllowOrigin:
-    Type: String
 
 
 Resources:
@@ -24,7 +22,6 @@ Resources:
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         EnvironmentName: !Ref EnvironmentName
-        ApiAllowOrigin: !Ref ApiAllowOrigin
 
   # タグ全部 samconfig.toml でついたか確認する（BffStackは消してないよ）
 

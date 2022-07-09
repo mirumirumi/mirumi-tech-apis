@@ -10,9 +10,6 @@ Globals:
     Layers:
       - !Ref ImportModulesLayer
       - !Ref UtilsLayer
-    Environment:
-      Variables:
-        API_ALLOW_ORIGIN: !Sub ${ApiAllowOrigin}
 
 
 Parameters:
@@ -24,8 +21,6 @@ Parameters:
     AllowedValues:
       - dev
       - prd
-  ApiAllowOrigin:
-    Type: String
 
 
 Resources:
@@ -34,10 +29,8 @@ Resources:
     Properties:
       Name: !Sub ${ResourcePrefix}-${EnvironmentName}
       StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
-      Cors:
-        AllowOrigin: !Sub "'${ApiAllowOrigin}'"
-        AllowHeaders: "'Content-Type, X-Amz-Date, X-Api-Key, Authorization, X-Amz-Security-Token'"
-        AllowMethods: "'GET, POST, PUT, DELETE, OPTIONS'"
+      Auth:
+        ApiKeyRequired: true
   ApiKey:
     Type: AWS::ApiGateway::ApiKey
     Properties:
@@ -161,6 +154,7 @@ Resources:
       Runtime: python3.9
       Architectures:
         - x86_64
+      MemorySize: 512
       Timeout: 90
       Layers:
         - !Ref InsertContentWebhookLayer
@@ -177,8 +171,6 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /insert-content-webhook
             Method: post
-            Auth:
-              ApiKeyRequired: true
 
   PostTable:
     Type: AWS::DynamoDB::Table
