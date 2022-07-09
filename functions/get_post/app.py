@@ -22,8 +22,12 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
         res = post_table.get_item(Key={
             "slag": slag,
         })
+        result = res["Item"]
+    except KeyError as e:
+        logger.exception(e)
+        return s500(f"KeyError: slag `{slag}` was not found")
     except Exception as e:
         logger.exception(e)
         return s500()
     
-    return s200(res["Item"])
+    return s200(result)
