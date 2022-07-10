@@ -19,6 +19,8 @@ def customize_html(html: str) -> str:
     # add github content domain in `img`
     html = fix_img_src(html)
 
+    # add any classes (`win11_ss` etc...)
+    # unimplemented in markdown2: dokokani comment shita
 
     return html
 
