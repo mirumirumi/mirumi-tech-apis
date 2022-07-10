@@ -99,6 +99,28 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-tag-indexes
             Method: get
+  GetAllTagsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-get-all-tags
+      CodeUri: ../functions/get_all_tags
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostTable
+      Environment:
+        Variables:
+          POST_TABLE_NAME: !Ref PostTable
+      Events:
+        RestApis:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApis
+            Path: /get-all-tags
+            Method: get
   GetPostFunction:
     Type: AWS::Serverless::Function
     Properties:
