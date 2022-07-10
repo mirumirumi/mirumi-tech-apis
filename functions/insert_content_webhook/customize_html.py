@@ -82,7 +82,10 @@ def convert_to_blogcard(html: str) -> str:
 
 
 def convert_to_common_box(html: str) -> str:
-    boxes = re.findall("(<p>:::(info|alert|rewrite\s*\d+\/\d+\/\d+)\n*(.*?)<\/p>\n+((<p>.*?<\/p>\n+)*)\n+<p>(.*?)\n*:::<\/p>)", html)  # https://regex101.com/r/epW7pO/1
+    boxes = re.findall(
+        "(<p>:::(info|alert|rewrite\s*\d+\/\d+\/\d+)\n*(.*?)<\/p>\n+((<p>.*?<\/p>\n+)*)\n+<p>(.*?)\n*:::<\/p>)",  # https://regex101.com/r/epW7pO/1
+        html
+    )
     replace_to = ""
 
     for box in boxes:
