@@ -21,7 +21,9 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
 
     result = None
     try:
-        res = post_table.scan()
+        res = post_table.scan(
+            ProjectionExpression="slag, title, created_at, updated_at",
+        )
         result = res["Items"]
     except Exception as e:
         logger.exception(e)

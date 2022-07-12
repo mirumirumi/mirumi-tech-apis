@@ -18,7 +18,9 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
     logger.info(event)
 
     try:
-        res = post_table.scan()
+        res = post_table.scan(
+            Select="COUNT",
+        )
         result = res["Count"]
     except Exception as e:
         logger.exception(e)
