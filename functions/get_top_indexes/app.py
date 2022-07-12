@@ -3,6 +3,7 @@ from typing import Any, cast, Literal, TypedDict
 
 import os
 import boto3
+from constants import *
 from proxy_response import *
 from aws_lambda_powertools.logging import Logger
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -11,8 +12,6 @@ logger = Logger()
 
 POST_TABLE_NAME = os.environ["POST_TABLE_NAME"]
 post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
-
-PAGE_ITEMS = 13
 
 
 @logger.inject_lambda_context
