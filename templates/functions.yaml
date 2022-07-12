@@ -77,6 +77,28 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-top-indexes
             Method: get
+  GetPostCountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-get-post-count
+      CodeUri: ../functions/get_post_count
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostTable
+      Environment:
+        Variables:
+          POST_TABLE_NAME: !Ref PostTable
+      Events:
+        RestApis:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApis
+            Path: /get-post-count
+            Method: get
   GetTagIndexesFunction:
     Type: AWS::Serverless::Function
     Properties:
