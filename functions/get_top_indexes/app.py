@@ -12,25 +12,30 @@ logger = Logger()
 POST_TABLE_NAME = os.environ["POST_TABLE_NAME"]
 post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 
+PAGE_ITEMS = 13
+
 
 @logger.inject_lambda_context
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyResponse:
     logger.info(event)
-
-    page = None
-    if event["queryStringParameters"]:
-        if "page" in event["queryStringParameters"]:
-            page = event["queryStringParameters"]["page"]
+    page = event["queryStringParameters"]["page"]
 
     result = None
-    if page:
+    try:
+        res = post_table.scan()
+        result = res["Items"]
+    except Exception as e:
+        logger.exception(e)
+        return s500()
+
+    result.sort(key=lambda x: cast(str, x["created_at"]), reverse=True)        
+
+    # all-entries page
+    if page == "all":
         pass
+    # top indexes (contains page/1)
     else:
-        try:
-            res = post_table.scan()
-            result = res["Items"]
-        except Exception as e:
-            logger.exception(e)
-            return s500()
+        page = int(page)
+        result = result[(page - 1) * PAGE_ITEMS : page * PAGE_ITEMS]
 
     return s200(result)
