@@ -21,6 +21,8 @@ class Post:
         self.body = self.__remove_front_matter(body)
         self.created_at = datetime.now(JST).isoformat()
         self.updated_at = datetime.now(JST).isoformat()
+        self.seach_title = self.title.lower()
+        self.seach_tags = [tag.lower() for tag in self.tags]
 
     @staticmethod
     def __front_matter_title(body_md: str) -> str:
