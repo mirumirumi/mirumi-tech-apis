@@ -10,6 +10,7 @@ region = "ap-northeast-1"
 capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM"
 parameter_overrides = """\
     EnvironmentName=\"dev\" \
+    AllowedClientOrigin=\"http://localhost:17329\" \
 """
 tags = "project=\"mirumitech\" env=\"dev\" IaC=\"cfn\""
 confirm_changeset = false
@@ -24,6 +25,7 @@ region = "ap-northeast-1"
 capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM"
 parameter_overrides = """\
     EnvironmentName=\"prd\" \
+    AllowedClientOrigin=\"https://mirumi.tech\" \
 """
 tags = "project=\"mirumitech\" env=\"prd\" IaC=\"cfn\""
 confirm_changeset = false

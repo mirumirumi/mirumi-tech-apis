@@ -21,6 +21,8 @@ Parameters:
     AllowedValues:
       - dev
       - prd
+  AllowedClientOrigin:
+    Type: String
 
 
 Resources:
@@ -181,6 +183,7 @@ Resources:
       Environment:
         Variables:
           POST_TABLE_NAME: !Ref PostTable
+          ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
       Events:
         RestApis:
           Type: Api
