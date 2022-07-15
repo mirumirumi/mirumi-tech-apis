@@ -14,20 +14,31 @@ logger = Logger()
 POST_TABLE_NAME = os.environ["POST_TABLE_NAME"]
 post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 
+ALLOWED_CLIENT_ORIGIN = os.environ["ALLOWED_CLIENT_ORIGIN"]
+
 
 @logger.inject_lambda_context
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyResponse:
     logger.info(event)
+
+    if "headers" in event and "origin" in event["headers"]:
+        if event["headers"]["origin"] != ALLOWED_CLIENT_ORIGIN:
+            return s403()
+    elif event["resource"] == "/search-post-from-client":
+        return s403()
+
     page = int(event["queryStringParameters"]["page"])
     tag = event["queryStringParameters"]["tag"]
 
     result = None
+    count = None
     try:
         res = post_table.scan(
             FilterExpression=Attr("tags").contains(tag),
             ProjectionExpression="slag, title, created_at, updated_at",
         )
         result = res["Items"]
+        count = len(result)
     except Exception as e:
         logger.exception(e)
         return s500()
@@ -36,4 +47,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
 
     result = result[(page - 1) * PAGE_ITEMS : page * PAGE_ITEMS]
 
-    return s200(result)
+    return s200({
+        "items": result,
+        "count": count,
+    })

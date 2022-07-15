@@ -72,6 +72,7 @@ Resources:
       Environment:
         Variables:
           POST_TABLE_NAME: !Ref PostTable
+          ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
       Events:
         RestApis:
           Type: Api
@@ -79,28 +80,14 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-top-indexes
             Method: get
-  GetPostCountFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-get-post-count
-      CodeUri: ../functions/get_post_count
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PostTable
-      Environment:
-        Variables:
-          POST_TABLE_NAME: !Ref PostTable
-      Events:
-        RestApis:
+        FromClient:
           Type: Api
           Properties:
             RestApiId: !Ref RestApis
-            Path: /get-post-count
+            Path: /get-top-indexes-from-client
             Method: get
+            Auth:
+              ApiKeyRequired: false
   GetTagIndexesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -116,6 +103,7 @@ Resources:
       Environment:
         Variables:
           POST_TABLE_NAME: !Ref PostTable
+          ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
       Events:
         RestApis:
           Type: Api
@@ -123,6 +111,14 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-tag-indexes
             Method: get
+        FromClient:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApis
+            Path: /get-tag-indexes-from-client
+            Method: get
+            Auth:
+              ApiKeyRequired: false
   GetAllTagsFunction:
     Type: AWS::Serverless::Function
     Properties:
