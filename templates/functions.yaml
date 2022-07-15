@@ -191,6 +191,14 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /search-post
             Method: get
+        FromClient:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApis
+            Path: /search-post-from-client
+            Method: get
+            Auth:
+              ApiKeyRequired: false
 
   InsertContentWebhookFunction:
     Type: AWS::Serverless::Function
