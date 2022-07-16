@@ -24,6 +24,8 @@ jobs:
 
       - name: decrypt gpg secret
         run: |
+          echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "samconfig.toml" --decrypt "samconfig.toml.gpg"
+        run: |
           echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "functions/insert_content_webhook/secret.py" --decrypt "functions/insert_content_webhook/secret.py.gpg"
 
       - run: sam build --use-container
