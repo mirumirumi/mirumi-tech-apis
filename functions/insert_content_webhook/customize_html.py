@@ -20,7 +20,7 @@ def customize_html(html: str) -> str:
     html = fix_img_src(html)
 
     # add any classes (`win11_ss` etc...)
-    # unimplemented in markdown2: dokokani comment shita
+    # unimplemented in markdown2: https://github.com/trentm/python-markdown2/issues/299
 
     return html
 
@@ -40,7 +40,7 @@ def convert_to_blogcard(html: str) -> str:
     blogcard_tags = """
         <a href="##fullpath##" class="blogcard" rel="noopener" target="_top">
             <div class="blogcard">
-                <div class="thumbnail">
+                <div class="thumbnail ##github##">
                     <img src="##image##" alt="##title##" />
                 </div>
                 <div class="content">
@@ -75,6 +75,8 @@ def convert_to_blogcard(html: str) -> str:
         blogcard_tags = blogcard_tags.replace("##domain##", domain)
         blogcard_tags = blogcard_tags.replace("##title##", title)
         blogcard_tags = blogcard_tags.replace("##description##", description)
+
+        blogcard_tags = blogcard_tags.replace("##github##", "github" if domain == "github.com" else "")
 
         html = html.replace(link[0], blogcard_tags)
 
