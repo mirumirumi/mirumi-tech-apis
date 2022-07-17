@@ -35,21 +35,23 @@ Resources:
         ApiKeyRequired: true
   ApiKey:
     Type: AWS::ApiGateway::ApiKey
+    DependsOn:
+     - RestApisStage
     Properties:
       Name: !Sub ${ResourcePrefix}-${EnvironmentName}-api-key
       Enabled: true
       StageKeys:
         - RestApiId: !Ref RestApis
-          StageName:
-            !Sub ${ResourcePrefix}-${EnvironmentName}-apis
+          StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
   ApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
+    DependsOn:
+     - RestApisStage
     Properties:
       UsagePlanName: !Sub ${ResourcePrefix}-${EnvironmentName}-api-usage-plan
       ApiStages:
         - ApiId: !Ref RestApis
-          Stage:
-            !Sub ${ResourcePrefix}-${EnvironmentName}-apis
+          Stage: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
   ApiUsagePlanKey:
     Type: AWS::ApiGateway::UsagePlanKey
     Properties :
