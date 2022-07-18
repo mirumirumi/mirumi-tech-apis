@@ -31,8 +31,6 @@ Resources:
     Properties:
       Name: !Sub ${ResourcePrefix}-${EnvironmentName}
       StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
-      Auth:
-        ApiKeyRequired: true
       Cors:
         AllowOrigin: !Sub "'${AllowedClientOrigin}'"
         AllowHeaders: "'Content-Type, X-Amz-Date, X-Api-Key, Authorization, X-Amz-Security-Token'"
@@ -86,6 +84,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-top-indexes
             Method: get
+            Auth:
+              ApiKeyRequired: true
         FromClient:
           Type: Api
           Properties:
@@ -117,6 +117,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-tag-indexes
             Method: get
+            Auth:
+              ApiKeyRequired: true
         FromClient:
           Type: Api
           Properties:
@@ -147,6 +149,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-all-tags
             Method: get
+            Auth:
+              ApiKeyRequired: true
   GetPostFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -169,6 +173,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-post
             Method: get
+            Auth:
+              ApiKeyRequired: true
   SearchPostFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -192,6 +198,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /search-post
             Method: get
+            Auth:
+              ApiKeyRequired: true
         FromClient:
           Type: Api
           Properties:
@@ -226,6 +234,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /insert-content-webhook
             Method: post
+            Auth:
+              ApiKeyRequired: true
 
   PostTable:
     Type: AWS::DynamoDB::Table
