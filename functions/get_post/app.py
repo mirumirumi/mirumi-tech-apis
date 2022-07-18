@@ -12,8 +12,6 @@ logger = Logger()
 POST_TABLE_NAME = os.environ["POST_TABLE_NAME"]
 post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 
-ALLOWED_CLIENT_ORIGIN = os.environ["ALLOWED_CLIENT_ORIGIN"]
-
 
 @logger.inject_lambda_context
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyResponse:
