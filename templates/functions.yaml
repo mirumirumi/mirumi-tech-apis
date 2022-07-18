@@ -42,7 +42,6 @@ Resources:
             FunctionArn: !GetAtt AuthorizeKeyFunction.Arn
             Identity:
               ReauthorizeEvery: 0
-        DefaultAuthorizer: KeyAuth
       Cors:
         AllowOrigin: !Sub "'${AllowedClientOrigin}'"
         AllowHeaders: "'Content-Type, X-Amz-Date, X-Api-Key, Authorization, X-Amz-Security-Token'"
@@ -83,6 +82,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-top-indexes
             Method: get
+            Auth: 
+              Authorizer: KeyAuth
   GetTagIndexesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -105,6 +106,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-tag-indexes
             Method: get
+            Auth: 
+              Authorizer: KeyAuth
   GetAllTagsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -127,6 +130,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-all-tags
             Method: get
+            Auth: 
+              Authorizer: KeyAuth
   GetPostFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -149,6 +154,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-post
             Method: get
+            Auth: 
+              Authorizer: KeyAuth
   SearchPostFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -171,6 +178,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /search-post
             Method: get
+            Auth: 
+              Authorizer: KeyAuth
 
   InsertContentWebhookFunction:
     Type: AWS::Serverless::Function
@@ -197,6 +206,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /insert-content-webhook
             Method: post
+            Auth: 
+              Authorizer: KeyAuth
 
   PostTable:
     Type: AWS::DynamoDB::Table
