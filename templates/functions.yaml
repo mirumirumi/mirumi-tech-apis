@@ -33,6 +33,10 @@ Resources:
       StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
       Auth:
         ApiKeyRequired: true
+      Cors:
+        AllowOrigin: !Sub "'${AllowedClientOrigin}'"
+        AllowHeaders: "'Content-Type, X-Amz-Date, X-Api-Key, Authorization, X-Amz-Security-Token'"
+        AllowMethods: "'GET, POST, PUT, DELETE, OPTIONS'"
   ApiKey:
     Type: AWS::ApiGateway::ApiKey
     DependsOn:
@@ -150,7 +154,6 @@ Resources:
       CodeUri: ../functions/get_post
       Handler: app.lambda_handler
       Runtime: python3.9
-      MemorySize: 512  # [TODO]: adjust
       Architectures:
         - x86_64
       Policies:
@@ -207,7 +210,6 @@ Resources:
       Runtime: python3.9
       Architectures:
         - x86_64
-      MemorySize: 512
       Timeout: 90
       Layers:
         - !Ref InsertContentWebhookLayer
