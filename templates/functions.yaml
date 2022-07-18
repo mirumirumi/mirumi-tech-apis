@@ -26,6 +26,8 @@ Parameters:
       - prd
   AllowedClientOrigin:
     Type: String
+  UnHashedApiKey:
+    Type: String
 
 
 Resources:
@@ -34,35 +36,30 @@ Resources:
     Properties:
       Name: !Sub ${ResourcePrefix}-${EnvironmentName}
       StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
+      Auth:
+        Authorizers:
+          KeyAuth:
+            FunctionArn: !GetAtt AuthorizeKeyFunction.Arn
+            Identity:
+              ReauthorizeEvery: 0
+        DefaultAuthorizer: KeyAuth
       Cors:
         AllowOrigin: !Sub "'${AllowedClientOrigin}'"
         AllowHeaders: "'Content-Type, X-Amz-Date, X-Api-Key, Authorization, X-Amz-Security-Token'"
         AllowMethods: "'GET, POST, PUT, DELETE, OPTIONS'"
-  ApiKey:
-    Type: AWS::ApiGateway::ApiKey
-    DependsOn:
-     - RestApisStage
+
+  AuthorizeKeyFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      Name: !Sub ${ResourcePrefix}-${EnvironmentName}-api-key
-      Enabled: true
-      StageKeys:
-        - RestApiId: !Ref RestApis
-          StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
-  ApiUsagePlan:
-    Type: AWS::ApiGateway::UsagePlan
-    DependsOn:
-     - RestApisStage
-    Properties:
-      UsagePlanName: !Sub ${ResourcePrefix}-${EnvironmentName}-api-usage-plan
-      ApiStages:
-        - ApiId: !Ref RestApis
-          Stage: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
-  ApiUsagePlanKey:
-    Type: AWS::ApiGateway::UsagePlanKey
-    Properties :
-      KeyId: !Ref ApiKey
-      KeyType: API_KEY
-      UsagePlanId: !Ref ApiUsagePlan
+      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-authorize-key
+      CodeUri: ../functions/authorize_key
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          UNHASHED_KEY: !Ref UnHashedApiKey
 
   GetTopIndexesFunction:
     Type: AWS::Serverless::Function
@@ -86,8 +83,6 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-top-indexes
             Method: get
-            Auth:
-              ApiKeyRequired: true
   GetTagIndexesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -110,8 +105,6 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-tag-indexes
             Method: get
-            Auth:
-              ApiKeyRequired: true
   GetAllTagsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -134,8 +127,6 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-all-tags
             Method: get
-            Auth:
-              ApiKeyRequired: true
   GetPostFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -158,8 +149,6 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-post
             Method: get
-            Auth:
-              ApiKeyRequired: true
   SearchPostFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -182,8 +171,6 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /search-post
             Method: get
-            Auth:
-              ApiKeyRequired: true
 
   InsertContentWebhookFunction:
     Type: AWS::Serverless::Function
@@ -210,8 +197,6 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /insert-content-webhook
             Method: post
-            Auth:
-              ApiKeyRequired: true
 
   PostTable:
     Type: AWS::DynamoDB::Table
