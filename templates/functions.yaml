@@ -10,6 +10,9 @@ Globals:
     Layers:
       - !Ref ImportModulesLayer
       - !Ref UtilsLayer
+    Environment:
+      Variables:
+        ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
 
 
 Parameters:
@@ -76,7 +79,6 @@ Resources:
       Environment:
         Variables:
           POST_TABLE_NAME: !Ref PostTable
-          ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
       Events:
         RestApis:
           Type: Api
@@ -109,7 +111,6 @@ Resources:
       Environment:
         Variables:
           POST_TABLE_NAME: !Ref PostTable
-          ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
       Events:
         RestApis:
           Type: Api
@@ -190,7 +191,6 @@ Resources:
       Environment:
         Variables:
           POST_TABLE_NAME: !Ref PostTable
-          ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
       Events:
         RestApis:
           Type: Api
