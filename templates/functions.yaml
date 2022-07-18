@@ -92,8 +92,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-top-indexes-from-client
             Method: get
-            Auth:
-              ApiKeyRequired: false
+            # Auth:
+            #   ApiKeyRequired: false
   GetTagIndexesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -125,8 +125,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /get-tag-indexes-from-client
             Method: get
-            Auth:
-              ApiKeyRequired: false
+            # Auth:
+            #   ApiKeyRequired: false
   GetAllTagsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -206,8 +206,8 @@ Resources:
             RestApiId: !Ref RestApis
             Path: /search-post-from-client
             Method: get
-            Auth:
-              ApiKeyRequired: false
+            # Auth:
+            #   ApiKeyRequired: false
 
   InsertContentWebhookFunction:
     Type: AWS::Serverless::Function
