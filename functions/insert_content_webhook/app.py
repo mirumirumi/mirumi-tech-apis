@@ -64,7 +64,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
         post.body = customize_html(post.body)
 
     for post in posts_to_insert:
-        if post.is_already_exist():  # only difference is the created_at
+        if post.is_already_exist():  # only difference is the created_at and updated_at
             try:
                 post_table.update_item(
                     Key={
@@ -99,7 +99,6 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
                     UpdateExpression="""set 
                         title = :title,
                         created_at = :created_at,
-                        updated_at = :updated_at,
                         tags = :tags,
                         body = :body,
                         search_title = :search_title,
@@ -108,7 +107,6 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
                     ExpressionAttributeValues={
                         ":title": post.title,
                         ":created_at": post.created_at,
-                        ":updated_at": post.updated_at,
                         ":tags": post.tags,
                         ":body": post.body,
                         ":search_title": post.seach_title,
