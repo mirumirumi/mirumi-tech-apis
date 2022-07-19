@@ -29,16 +29,10 @@ Resources:
         AllowedClientOrigin: !Ref AllowedClientOrigin
         UnHashedApiKey: !Ref UnHashedApiKey
 
-  # タグ全部 samconfig.toml でついたか確認する（BffStackは消してないよ）
-
-  # BffStack:
-  #   Type: AWS::Serverless::Application
-  #   Properties:
-  #     Location: ./templates/bff.yaml
-  #     Parameters:
-  #       ResourcePrefix: !Ref ResourcePrefix
-  #       EnvironmentName: !Ref EnvironmentName
-  #     Tags:
-  #       project: !Ref ResourcePrefix
-  #       env: !Ref EnvironmentName
-  #       IaC: cfn
+  BffStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./templates/bff.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        EnvironmentName: !Ref EnvironmentName

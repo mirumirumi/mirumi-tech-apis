@@ -3,18 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: functions and apis
 
 
-Globals:
-  Function:
-    MemorySize: 128  # default
-    Timeout: 13
-    Layers:
-      - !Ref ImportModulesLayer
-      - !Ref UtilsLayer
-    Environment:
-      Variables:
-        ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
-
-
 Parameters:
   ResourcePrefix:
     Type: String
@@ -28,6 +16,18 @@ Parameters:
     Type: String
   UnHashedApiKey:
     Type: String
+
+
+Globals:
+  Function:
+    MemorySize: 128  # default
+    Timeout: 13
+    Layers:
+      - !Ref ImportModulesLayer
+      - !Ref UtilsLayer
+    Environment:
+      Variables:
+        ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
 
 
 Resources:

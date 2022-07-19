@@ -1,18 +1,113 @@
-# AWSTemplateFormatVersion: "2010-09-09"
-# Transform: AWS::Serverless-2016-10-31
-# Description: backend for frontend resources
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: backend for frontend resources
 
 
-# Parameters:
-#   ResourcePrefix:
-#     Type: String
-#     Default: mirumitech
-#   EnvironmentName:
-#     Type: String
-#     AllowedValues:
-#       - dev
-#       - prd
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Default: mirumitech
+  EnvironmentName:
+    Type: String
+    AllowedValues:
+      - dev
+      - prd
 
 
-# Resources:
+Conditions:
+  OnlyPrd:
+    !Equals
+      - !Ref EnvironmentName
+      - prd
 
+
+Resources:
+  StaticHostingBucket:
+    Type: AWS::S3::Bucket
+    Condition: OnlyPrd
+    Properties:
+      BucketName: !Sub ${ResourcePrefix}-${EnvironmentName}-static-hosting
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  LoggingBucket:
+    Type: AWS::S3::Bucket
+    Condition: OnlyPrd
+    Properties:
+      BucketName: !Sub ${ResourcePrefix}-${EnvironmentName}-logging
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  StaticHostingCloudFront:
+    Type: AWS::CloudFront::Distribution
+    Condition: OnlyPrd
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - "mirumi.tech"
+        DefaultRootObject: index.html
+        Enabled: true
+        DefaultCacheBehavior:
+          AllowedMethods: 
+            - GET
+            - HEAD
+          CachedMethods: 
+            - GET
+            - HEAD
+          ForwardedValues:
+            Cookies:
+              Forward: "none"
+            QueryString: true
+          TargetOriginId: !GetAtt StaticHostingBucket.RegionalDomainName
+          ViewerProtocolPolicy: redirect-to-https
+        HttpVersion: http2
+        Logging:
+          Bucket: !GetAtt LoggingBucket.DomainName
+          IncludeCookies: true
+        Origins:
+          - DomainName: !GetAtt StaticHostingBucket.RegionalDomainName
+            Id: !GetAtt StaticHostingBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${OriginAccessIdentity}
+        Restrictions:
+          GeoRestriction: 
+            RestrictionType: none
+        ViewerCertificate:
+          AcmCertificateArn: arn:aws:acm:us-east-1:145943270736:certificate/cd9c6ffd-8733-403c-a856-665835f70a4d
+          MinimumProtocolVersion: TLSv1.2_2021
+          SslSupportMethod: sni-only
+
+  OriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Condition: OnlyPrd
+    Properties: 
+      CloudFrontOriginAccessIdentityConfig: 
+        Comment: (｡･ڡ･｡)
+
+  OAIBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: OnlyPrd
+    Properties: 
+      Bucket: !Ref StaticHostingBucket
+      PolicyDocument: 
+        {
+          "Id": "OAIBucketPolicy",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "OAIBucketPolicy",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${OriginAccessIdentity}"
+              },
+              "Action": "s3:GetObject",
+              "Resource": !Sub "arn:aws:s3:::${StaticHostingBucket}/*"
+            }
+          ]
+        }
