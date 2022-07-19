@@ -114,7 +114,7 @@ def add_date_into_rewritebox(html: str) -> str:
 
 def fix_img_src(html: str) -> str:
     return re.sub(
-        "(<p.*?><img.*?src=\")((.*?)images\/)(.*?)(\".*?\/><\/p>)",  # https://regex101.com/r/z7iULl/1
+        "(<p.*?><img.*?src=\")((.*?)images\/)(.*?)(\".*?\/>\s*\n?.*?<\/p>)",  # https://regex101.com/r/8ckfux/1
         "\\1https://raw.githubusercontent.com/mirumirumi/mirumi-tech-content/main/images/\\4\\5",
         html
     )

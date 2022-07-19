@@ -30,4 +30,4 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
     for post in posts:
         tags.extend(cast(list[str], post["tags"]))
 
-    return s200(list(set(tags)))
+    return s200(sorted(list(set(tags))))

@@ -37,7 +37,7 @@ class Post:
         lines = body_md.splitlines()
         for line in lines:
             if (line.startswith("tags")):
-                return re.sub("tags\s*:\s*\[(.*?)\]$", "\\1", line).replace(" ", "").split(",")  # https://regex101.com/r/5Z0OqH/1
+                return re.sub("tags\s*:\s*\[(.*?)\]$", "\\1", line).replace(", ", ",").split(",")  # https://regex101.com/r/5Z0OqH/1
         raise Exception("front matter of `tags` was not found")
 
     @staticmethod
