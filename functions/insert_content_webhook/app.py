@@ -36,7 +36,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
     for changed_file_path in changed_file_paths:
         if not "posts/" in changed_file_path:
             continue
-        if changed_file_path == "posts/template.md":
+        if changed_file_path == "posts/__template.md":
             continue
         changed_posts.append(re.sub("posts\/(.*?.md)$", "\\1", changed_file_path))  # https://regex101.com/r/ZHOHDe/1
 
