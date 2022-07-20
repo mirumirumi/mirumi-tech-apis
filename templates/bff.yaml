@@ -32,6 +32,8 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      WebsiteConfiguration:
+        IndexDocument: index.html
 
   LoggingBucket:
     Type: AWS::S3::Bucket
@@ -64,15 +66,15 @@ Resources:
             Cookies:
               Forward: "none"
             QueryString: true
-          TargetOriginId: !GetAtt StaticHostingBucket.RegionalDomainName
+          TargetOriginId: !GetAtt StaticHostingBucket.WebsiteURL
           ViewerProtocolPolicy: redirect-to-https
         HttpVersion: http2
         Logging:
           Bucket: !GetAtt LoggingBucket.DomainName
           IncludeCookies: true
         Origins:
-          - DomainName: !GetAtt StaticHostingBucket.RegionalDomainName
-            Id: !GetAtt StaticHostingBucket.RegionalDomainName
+          - DomainName: !GetAtt StaticHostingBucket.WebsiteURL
+            Id: !GetAtt StaticHostingBucket.WebsiteURL
             S3OriginConfig:
               OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${OriginAccessIdentity}
         Restrictions:
@@ -88,7 +90,7 @@ Resources:
     Condition: OnlyPrd
     Properties: 
       CloudFrontOriginAccessIdentityConfig: 
-        Comment: (｡･ڡ･｡)
+        Comment: !Sub ${ResourcePrefix}-${EnvironmentName}-static-hosting
 
   OAIBucketPolicy:
     Type: AWS::S3::BucketPolicy
