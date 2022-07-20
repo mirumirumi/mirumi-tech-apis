@@ -28,10 +28,10 @@ Resources:
     Properties:
       BucketName: !Sub ${ResourcePrefix}-${EnvironmentName}-static-hosting
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
       WebsiteConfiguration:
         IndexDocument: index.html
 
@@ -66,17 +66,19 @@ Resources:
             Cookies:
               Forward: "none"
             QueryString: true
-          TargetOriginId: !GetAtt StaticHostingBucket.WebsiteURL
+          TargetOriginId: !Ref StaticHostingBucket
           ViewerProtocolPolicy: redirect-to-https
         HttpVersion: http2
         Logging:
           Bucket: !GetAtt LoggingBucket.DomainName
           IncludeCookies: true
         Origins:
-          - DomainName: !GetAtt StaticHostingBucket.WebsiteURL
-            Id: !GetAtt StaticHostingBucket.WebsiteURL
-            S3OriginConfig:
-              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${OriginAccessIdentity}
+          - DomainName: !Sub ${StaticHostingBucket}.s3-website-ap-northeast-1.amazonaws.com
+            Id: !Ref StaticHostingBucket
+            CustomOriginConfig:  # for only s3-static-hosting
+              OriginProtocolPolicy: http-only
+            # S3OriginConfig:  # for only non-s3-static-hosting
+            #   OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${OriginAccessIdentity}
         Restrictions:
           GeoRestriction: 
             RestrictionType: none
@@ -85,31 +87,51 @@ Resources:
           MinimumProtocolVersion: TLSv1.2_2021
           SslSupportMethod: sni-only
 
-  OriginAccessIdentity:
-    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
-    Condition: OnlyPrd
-    Properties: 
-      CloudFrontOriginAccessIdentityConfig: 
-        Comment: !Sub ${ResourcePrefix}-${EnvironmentName}-static-hosting
+  # OriginAccessIdentity:
+  #   Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+  #   Condition: OnlyPrd
+  #   Properties: 
+  #     CloudFrontOriginAccessIdentityConfig: 
+  #       Comment: !Sub ${ResourcePrefix}-${EnvironmentName}-static-hosting
 
-  OAIBucketPolicy:
+  StaticSiteHostingPublicReadPolicy:
     Type: AWS::S3::BucketPolicy
     Condition: OnlyPrd
     Properties: 
       Bucket: !Ref StaticHostingBucket
       PolicyDocument: 
         {
-          "Id": "OAIBucketPolicy",
           "Version": "2012-10-17",
+          "Id": "StaticSiteHostingPublicReadPolicy",
           "Statement": [
             {
-              "Sid": "OAIBucketPolicy",
+              "Sid": "StaticSiteHostingPublicReadPolicy",
               "Effect": "Allow",
-              "Principal": {
-                "AWS": !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${OriginAccessIdentity}"
-              },
+              "Principal": "*",
               "Action": "s3:GetObject",
               "Resource": !Sub "arn:aws:s3:::${StaticHostingBucket}/*"
             }
           ]
         }
+
+  # OAIBucketPolicy:
+  #   Type: AWS::S3::BucketPolicy
+  #   Condition: OnlyPrd
+  #   Properties: 
+  #     Bucket: !Ref StaticHostingBucket
+  #     PolicyDocument: 
+  #       {
+  #         "Id": "OAIBucketPolicy",
+  #         "Version": "2012-10-17",
+  #         "Statement": [
+  #           {
+  #             "Sid": "OAIBucketPolicy",
+  #             "Effect": "Allow",
+  #             "Principal": {
+  #               "AWS": !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${OriginAccessIdentity}"
+  #             },
+  #             "Action": "s3:GetObject",
+  #             "Resource": !Sub "arn:aws:s3:::${StaticHostingBucket}/*"
+  #           }
+  #         ]
+  #       }
