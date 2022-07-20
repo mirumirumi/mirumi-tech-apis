@@ -53,8 +53,11 @@ Resources:
       DistributionConfig:
         Aliases:
           - "mirumi.tech"
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /assets/404.html
         DefaultRootObject: index.html
-        Enabled: true
         DefaultCacheBehavior:
           AllowedMethods: 
             - GET
@@ -68,6 +71,7 @@ Resources:
             QueryString: true
           TargetOriginId: !Ref StaticHostingBucket
           ViewerProtocolPolicy: redirect-to-https
+        Enabled: true
         HttpVersion: http2
         Logging:
           Bucket: !GetAtt LoggingBucket.DomainName
