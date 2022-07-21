@@ -72,10 +72,10 @@ def convert_to_blogcard(html: str) -> str:
         """
 
         fullpath: str = link[1]
-        image: str = OpenGraph(link[1])["image"]
+        image: str = OpenGraph(link[1]).get("image", "/assets/no-image.jpg")
         domain: str = re.sub("^(https?:\/\/)?([^\/]+).*$", "\\2", link[2])
-        title: str = OpenGraph(link[1])["title"]
-        description: str = OpenGraph(link[1])["description"]
+        title: str = OpenGraph(link[1]).get("title", fullpath)
+        description: str = OpenGraph(link[1]).get("description", "")
 
         blogcard_tags = blogcard_tags.replace("##fullpath##", fullpath)
         blogcard_tags = blogcard_tags.replace("##image##", image)
