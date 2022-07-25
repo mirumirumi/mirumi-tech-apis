@@ -59,6 +59,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
             "highlightjs-lang": None,
             "code-friendly": None,
             "strike": None,
+            "tables": None,
         })
 
     for post in posts_to_insert:
