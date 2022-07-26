@@ -4,7 +4,7 @@ from typing import Any, cast, Literal, TypedDict
 import os
 import re
 import boto3
-from datetime import datetime
+from datetime import datetime, date
 from zoneinfo import ZoneInfo
 
 JST = ZoneInfo("Asia/Tokyo")
@@ -65,5 +65,9 @@ class Post:
             })
         except Exception as e:
             raise Exception(f"something went wrong: {e}")
-
         return "Item" in res
+    
+    def is_same_day_createdAt_and_updatedAt(self) -> bool:
+        created_day = datetime.fromisoformat(self.created_at).date()
+        updated_day = datetime.fromisoformat(self.updated_at).date()
+        return created_day == updated_day
