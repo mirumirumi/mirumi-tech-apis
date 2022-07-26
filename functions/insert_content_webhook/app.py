@@ -66,32 +66,57 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
         post.body = customize_html(post.body)
 
     for post in posts_to_insert:
-        if post.is_already_exist():  # only difference is the created_at and updated_at
-            try:
-                post_table.update_item(
-                    Key={
-                        "slag": post.slag,
-                    },
-                    UpdateExpression="""set 
-                        title = :title,
-                        updated_at = :updated_at,
-                        tags = :tags,
-                        body = :body,
-                        search_title = :search_title,
-                        search_tags = :search_tags
-                    """,
-                    ExpressionAttributeValues={
-                        ":title": post.title,
-                        ":updated_at": post.updated_at,
-                        ":tags": post.tags,
-                        ":body": post.body,
-                        ":search_title": post.seach_title,
-                        ":search_tags": post.seach_tags,
-                    },
-                )
-            except Exception as e:
-                logger.exception(e)
-                return s500()
+        if post.is_already_exist():  # only difference is `created_at` and `updated_at`
+            if post.is_same_day_createdAt_and_updatedAt():  # only difference is `updated_at`
+                try:
+                    post_table.update_item(
+                        Key={
+                            "slag": post.slag,
+                        },
+                        UpdateExpression="""set 
+                            title = :title,
+                            tags = :tags,
+                            body = :body,
+                            search_title = :search_title,
+                            search_tags = :search_tags
+                        """,
+                        ExpressionAttributeValues={
+                            ":title": post.title,
+                            ":tags": post.tags,
+                            ":body": post.body,
+                            ":search_title": post.seach_title,
+                            ":search_tags": post.seach_tags,
+                        },
+                    )
+                except Exception as e:
+                    logger.exception(e)
+                    return s500()
+            else:
+                try:
+                    post_table.update_item(
+                        Key={
+                            "slag": post.slag,
+                        },
+                        UpdateExpression="""set 
+                            title = :title,
+                            updated_at = :updated_at,
+                            tags = :tags,
+                            body = :body,
+                            search_title = :search_title,
+                            search_tags = :search_tags
+                        """,
+                        ExpressionAttributeValues={
+                            ":title": post.title,
+                            ":updated_at": post.updated_at,
+                            ":tags": post.tags,
+                            ":body": post.body,
+                            ":search_title": post.seach_title,
+                            ":search_tags": post.seach_tags,
+                        },
+                    )
+                except Exception as e:
+                    logger.exception(e)
+                    return s500()
         else:
             try:
                 post_table.update_item(
