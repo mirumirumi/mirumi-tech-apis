@@ -76,12 +76,15 @@ def convert_to_blogcard(html: str) -> str:
 
         if fullpath.startswith("/"):  # internal link
             domain: str = SITE_DOMAIN
+            for_ogp = "https://" + domain + fullpath
+            image: str = OpenGraph(for_ogp).get("image", "/assets/no-image.jpg")
+            title: str = OpenGraph(for_ogp).get("title", for_ogp)
+            description: str = OpenGraph(for_ogp).get("description", "")
         else:
             domain: str = link[3]
-
-        image: str = OpenGraph(fullpath).get("image", "/assets/no-image.jpg")
-        title: str = OpenGraph(fullpath).get("title", fullpath)
-        description: str = OpenGraph(fullpath).get("description", "")
+            image: str = OpenGraph(fullpath).get("image", "/assets/no-image.jpg")
+            title: str = OpenGraph(fullpath).get("title", fullpath)
+            description: str = OpenGraph(fullpath).get("description", "")
 
         blogcard_tags = blogcard_tags.replace("##fullpath##", fullpath)
         blogcard_tags = blogcard_tags.replace("##image##", image)
