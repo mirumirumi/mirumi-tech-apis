@@ -83,6 +83,9 @@ Resources:
               OriginProtocolPolicy: http-only
             # S3OriginConfig:  # for only non-s3-static-hosting
             #   OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${OriginAccessIdentity}
+            OriginCustomHeaders:
+              - HeaderName: Referer
+                HeaderValue: !GetAtt StaticHostingBucket.DomainName
         Restrictions:
           GeoRestriction: 
             RestrictionType: none
@@ -113,7 +116,14 @@ Resources:
               "Effect": "Allow",
               "Principal": "*",
               "Action": "s3:GetObject",
-              "Resource": !Sub "arn:aws:s3:::${StaticHostingBucket}/*"
+              "Resource": !Sub "arn:aws:s3:::${StaticHostingBucket}/*",
+              "Condition": {
+                "StringLike": {
+                  "aws:Referer": [
+                    !GetAtt StaticHostingBucket.DomainName
+                  ]
+                }
+              }
             }
           ]
         }
