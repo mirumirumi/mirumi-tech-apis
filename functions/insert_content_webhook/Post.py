@@ -79,6 +79,12 @@ class Post:
         return "Item" in res
     
     def is_same_day_createdAt_and_updatedAt(self) -> bool:
-        created_day = datetime.fromisoformat(self.created_at).date()
-        updated_day = datetime.fromisoformat(self.updated_at).date()
+        try:
+            res = post_table.get_item(Key={
+                "slag": self.slag,
+            })
+        except Exception as e:
+            raise Exception(f"something went wrong: {e}")
+        created_day = datetime.fromisoformat(cast(str, res["Item"]["created_at"])).date()
+        updated_day = datetime.now(JST).date()
         return created_day == updated_day
