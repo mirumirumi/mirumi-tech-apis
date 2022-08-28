@@ -17,7 +17,7 @@ post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 @logger.inject_lambda_context
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyResponse:
     logger.info(event)
-    query: str = event["queryStringParameters"]["query"]
+    query: str = event["queryStringParameters"]["query"].lower()
 
     queries = query.split()
     candidates: list[dict[str, Any]] = list()
@@ -26,9 +26,10 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
         try:
             res = post_table.scan(
                 FilterExpression=
-                    Attr("slag").contains(query.lower())
+                    Attr("slag").contains(query)
                     | Attr("search_title").contains(q)
                     | Attr("search_tags").contains(q)
+                    | Attr("search_tags").contains("-".join(queries))
                 ,
                 ProjectionExpression="slag, title, created_at, updated_at",
             )

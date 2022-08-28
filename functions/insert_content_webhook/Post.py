@@ -21,8 +21,8 @@ class Post:
         self.body = self.__remove_front_matter(body)
         self.created_at = datetime.now(JST).isoformat()
         self.updated_at = datetime.now(JST).isoformat()
-        self.seach_title = self.title.lower()
-        self.seach_tags = [tag.lower() for tag in self.tags]
+        self.search_title = self.title.lower()
+        self.search_tags = self.__gen_search_tags()
 
     @staticmethod
     def __front_matter_title(body_md: str) -> str:
@@ -37,8 +37,19 @@ class Post:
         lines = body_md.splitlines()
         for line in lines:
             if (line.startswith("tags")):
-                return re.sub("tags\s*:\s*\[(.*?)\]$", "\\1", line).replace(", ", ",").replace("/", "@slash@").replace(" ", "@space@").split(",")  # https://regex101.com/r/5Z0OqH/1
+                return re.sub("tags\s*:\s*\[(.*?)\]$", "\\1", line) \
+                         .replace(", ", ",") \
+                         .split(",")  # https://regex101.com/r/5Z0OqH/1
         raise Exception("front matter of `tags` was not found")
+
+    def __gen_search_tags(self) -> list[str]:
+        result: list[str] = list()
+        for tag in self.tags:
+            result.append(
+                tag.lower() \
+                   .replace(" ", "-").replace("/", "-").replace("#", "sharp")
+            )
+        return result
 
     @staticmethod
     def __remove_front_matter(body_md: str) -> str:
