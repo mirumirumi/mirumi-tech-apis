@@ -84,8 +84,8 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
                             ":title": post.title,
                             ":tags": post.tags,
                             ":body": post.body,
-                            ":search_title": post.seach_title,
-                            ":search_tags": post.seach_tags,
+                            ":search_title": post.search_title,
+                            ":search_tags": post.search_tags,
                         },
                     )
                 except Exception as e:
@@ -110,8 +110,8 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
                             ":updated_at": post.updated_at,
                             ":tags": post.tags,
                             ":body": post.body,
-                            ":search_title": post.seach_title,
-                            ":search_tags": post.seach_tags,
+                            ":search_title": post.search_title,
+                            ":search_tags": post.search_tags,
                         },
                     )
                 except Exception as e:
@@ -136,8 +136,8 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
                         ":created_at": post.created_at,
                         ":tags": post.tags,
                         ":body": post.body,
-                        ":search_title": post.seach_title,
-                        ":search_tags": post.seach_tags,
+                        ":search_title": post.search_title,
+                        ":search_tags": post.search_tags,
                     },
                 )
             except Exception as e:

@@ -25,7 +25,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
     count = None
     try:
         res = post_table.scan(
-            FilterExpression=Attr("tags").contains(tag),
+            FilterExpression=Attr("search_tags").contains(tag),
             ProjectionExpression="slag, title, created_at, updated_at",
         )
         result = res["Items"]
@@ -34,7 +34,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
         logger.exception(e)
         return s500()
 
-    result.sort(key=lambda x: cast(str, x["created_at"]), reverse=True)        
+    result.sort(key=lambda x: cast(str, x["created_at"]), reverse=True)
 
     result = result[(page - 1) * PAGE_ITEMS : page * PAGE_ITEMS]
 
