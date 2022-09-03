@@ -53,22 +53,32 @@ Resources:
       DistributionConfig:
         Aliases:
           - "mirumi.tech"
+        CacheBehaviors:  # `/_nuxt/*`s
+          - AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # https://go.aws/3ei9N4j
+            Compress: true
+            PathPattern: /_nuxt/*
+            TargetOriginId: !Ref StaticHostingBucket
+            ViewerProtocolPolicy: redirect-to-https
         CustomErrorResponses:
           - ErrorCode: 404
             ResponseCode: 404
             ResponsePagePath: /assets/404.html
         DefaultRootObject: index.html
-        DefaultCacheBehavior:
-          AllowedMethods: 
+        DefaultCacheBehavior:  # `index.html`s
+          AllowedMethods:
             - GET
             - HEAD
-          CachedMethods: 
+          CachedMethods:
             - GET
             - HEAD
-          ForwardedValues:
-            Cookies:
-              Forward: "none"
-            QueryString: true
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # https://go.aws/3ei9N4j
+          Compress: true
           TargetOriginId: !Ref StaticHostingBucket
           ViewerProtocolPolicy: redirect-to-https
         Enabled: true
