@@ -4,7 +4,7 @@ from typing import Any, cast, Literal, TypedDict
 import os
 import re
 import boto3
-from datetime import datetime, date
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 JST = ZoneInfo("Asia/Tokyo")
