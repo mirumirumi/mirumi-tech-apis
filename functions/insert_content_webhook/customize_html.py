@@ -43,7 +43,7 @@ def add_toc_attrs(html: str) -> str:
 
 
 def convert_to_blogcard(html: str) -> str:
-    links = re.findall("(<p.*?>\[((https?://([^\/]+))?(.*?))\](<\/p>)?)", html)  # https://regex101.com/r/h3MvMb/1
+    links = re.findall("(<p.*?>\[((https?://([^\/]+))?(.*?))\](<\/p>)?)", html)  # https://regex101.com/r/7TVFtM/1
 
     for link in links:
         blogcard_tags = """
