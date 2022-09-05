@@ -5,7 +5,7 @@ from opengraph_py3 import OpenGraph
 
 
 def customize_html(html: str) -> str:
-    # remobe `\n` after `<br />`
+    # remove `\n` after `<br />`
     html = remove_n_after_br(html)
 
     # add TOC attributes
@@ -43,7 +43,7 @@ def add_toc_attrs(html: str) -> str:
 
 
 def convert_to_blogcard(html: str) -> str:
-    links = re.findall("(<p.*?>\[((https?://([^\/]+))?(.*?))\]<\/p>)", html)  # https://regex101.com/r/Ut9ilF/1
+    links = re.findall("(<p.*?>\[((https?://([^\/]+))?(.*?))\](<\/p>)?)", html)  # https://regex101.com/r/7TVFtM/1
 
     for link in links:
         blogcard_tags = """
@@ -101,7 +101,7 @@ def convert_to_blogcard(html: str) -> str:
 
 def convert_to_common_box(html: str) -> str:
     boxes = re.findall(
-        "(<p>:::(info|alert|rewrite\s*\d+\/\d+\/\d+)\n*(.*?)(<\/p>\n+((<p>.*?<\/p>\n+)*)\n+<p>)*(.*?)\n*:::<\/p>)",  # https://regex101.com/r/WCIqj7/1
+        "(<p>:::(info|alert|rewrite\s*\d+\/\d+\/\d+)\n*((.*?)<\/p>\n*(<.*?\n+)*?<p>)?(.*?)\n*:::<\/p>)",  # https://regex101.com/r/JvenCg/1
         html
     )
     replace_to = ""
@@ -114,7 +114,7 @@ def convert_to_common_box(html: str) -> str:
         elif "rewrite" in box[1]:
             replace_to = "<div class=\"box-common box-rewrite " + re.sub('rewrite\s*(\d+\/\d+\/\d+)', '\\1', box[1]) + "\">"
 
-        html = html.replace(box[0], replace_to + "<p>" + box[2] + "</p>" + box[4] + "<p>" + box[6] + "</p>" + "</div>")
+        html = html.replace(box[0], replace_to + "<p>" + box[2] + box[5] + "</p></div>")
 
     return html
 
