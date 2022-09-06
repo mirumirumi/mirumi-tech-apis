@@ -43,7 +43,7 @@ def add_toc_attrs(html: str) -> str:
 
 
 def convert_to_blogcard(html: str) -> str:
-    links = re.findall("(<p.*?>\[((https?://([^\/]+))?(.*?))\](<\/p>)?)", html)  # https://regex101.com/r/7TVFtM/1
+    links = re.findall("(<p.*?>\[((https?://([^\/]+))?(.*?))\](<\/p>)?)", html)  # https://regex101.com/r/qmA70D/1
 
     for link in links:
         blogcard_tags = """
@@ -53,19 +53,13 @@ def convert_to_blogcard(html: str) -> str:
             <img src="##image##" alt="##title##" />
         </div>
         <div class="content">
-            <div class="title">
-                ##title##
-            </div>
-            <div class="snippet">
-                ##description##
-            </div>
+            <div class="title">##title##</div>
+            <div class="snippet">##description##</div>
             <div class="footer">
                 <div class="favicon">
                     <img src="https://www.google.com/s2/favicons?domain=##domain##" alt="external-site-favicon" />
                 </div>
-                <div class="domain">
-                    ##domain##
-                </div>
+                <div class="domain">##domain##</div>
             </div>
         </div>
     </div>
@@ -101,8 +95,9 @@ def convert_to_blogcard(html: str) -> str:
 
 def convert_to_common_box(html: str) -> str:
     boxes = re.findall(
-        "(<p>:::(info|alert|rewrite\s*\d+\/\d+\/\d+)\n*((.*?)<\/p>\n*(<.*?\n+)*?<p>)?(.*?)\n*:::<\/p>)",  # https://regex101.com/r/JvenCg/1
+        "(<p>:::(info|alert|rewrite\s*\d+\/\d+\/\d+)\n*((.*?)<\/p>\n*(\s*<.*?\n*)*?(<p>)?)?(.*?)\n*:::<\/p>)",  # https://regex101.com/r/GSr3Oz/1
         html
+        # invalid `</p>` tag remains in pattern with blog card at the end with this regexp, confirmed no particular problems
     )
     replace_to = ""
 
@@ -114,7 +109,7 @@ def convert_to_common_box(html: str) -> str:
         elif "rewrite" in box[1]:
             replace_to = "<div class=\"box-common box-rewrite " + re.sub('rewrite\s*(\d+\/\d+\/\d+)', '\\1', box[1]) + "\">"
 
-        html = html.replace(box[0], replace_to + "<p>" + box[2] + box[5] + "</p></div>")
+        html = html.replace(box[0], replace_to + "<p>" + box[2] + box[6] + "</p></div>")
 
     return html
 
