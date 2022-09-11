@@ -31,7 +31,7 @@ class Post:
             if (line.startswith("title")):
                 return re.sub("title\s*:\s*(.*?)$", "\\1", line)  # https://regex101.com/r/4roRGw/1
         raise Exception("front matter of `title` was not found")
-   
+
     @staticmethod
     def __front_matter_tags(body_md: str) -> list[str]:
         lines = body_md.splitlines()
@@ -61,7 +61,7 @@ class Post:
                 continue
             if line == "---" and is_second_bar:
                 j = 1
-                try: 
+                try:
                     while lines[i + j] == "":
                         j += 1
                     return "\n".join(lines[i + j:])
@@ -77,7 +77,7 @@ class Post:
         except Exception as e:
             raise Exception(f"something went wrong: {e}")
         return "Item" in res
-    
+
     def is_same_day_createdAt_and_updatedAt(self) -> bool:
         try:
             res = post_table.get_item(Key={

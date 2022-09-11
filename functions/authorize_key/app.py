@@ -30,12 +30,10 @@ def result(effect: str, event: dict[str, Any]) -> dict[str, Any]:
         "principalId": "*",
         "policyDocument": {
             "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Action": "execute-api:Invoke",
-                    "Effect": effect,
-                    "Resource": event["methodArn"],
-                },
-            ],
+            "Statement": [{
+                "Action": "execute-api:Invoke",
+                "Effect": effect,
+                "Resource": event["methodArn"],
+            }, ],
         },
     }

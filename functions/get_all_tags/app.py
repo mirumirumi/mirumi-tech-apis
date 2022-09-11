@@ -12,9 +12,11 @@ logger = Logger()
 POST_TABLE_NAME = os.environ["POST_TABLE_NAME"]
 post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 
+
 class TableTagData(TypedDict):
     tags: list[str]
     search_tags: list[str]
+
 
 class Result(TypedDict):
     tag: str
@@ -26,9 +28,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
     logger.info(event)
 
     try:
-        res = post_table.scan(
-            ProjectionExpression="tags, search_tags",
-        )
+        res = post_table.scan(ProjectionExpression="tags, search_tags", )
         posts = cast(list[TableTagData], res["Items"])
     except Exception as e:
         logger.exception(e)

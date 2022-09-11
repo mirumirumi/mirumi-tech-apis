@@ -22,16 +22,14 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
     result = None
     count = None
     try:
-        res = post_table.scan(
-            ProjectionExpression="slag, title, created_at, updated_at",
-        )
+        res = post_table.scan(ProjectionExpression="slag, title, created_at, updated_at", )
         result = res["Items"]
         count = len(result)
     except Exception as e:
         logger.exception(e)
         return s500()
 
-    result.sort(key=lambda x: cast(str, x["created_at"]), reverse=True)        
+    result.sort(key=lambda x: cast(str, x["created_at"]), reverse=True)
 
     # all-entries page
     if page == "all":
@@ -39,7 +37,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
     # top indexes (contains page/1)
     else:
         page = int(page)
-        result = result[(page - 1) * PAGE_ITEMS : page * PAGE_ITEMS]
+        result = result[(page-1) * PAGE_ITEMS:page * PAGE_ITEMS]
 
     return s200({
         "items": result,

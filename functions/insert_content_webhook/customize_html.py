@@ -16,7 +16,7 @@ def customize_html(html: str) -> str:
 
     # convert `:::info/alert/rewrite` -> common box
     html = convert_to_common_box(html)
-    
+
     # add date into rewrite box
     html = add_date_into_rewritebox(html)
 
