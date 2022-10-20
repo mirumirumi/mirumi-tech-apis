@@ -4,6 +4,7 @@ from typing import Any, cast, Literal, TypedDict
 import os
 import re
 import boto3
+import urllib.parse
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -46,8 +47,10 @@ class Post:
         result: list[str] = list()
         for tag in self.tags:
             result.append(
-                tag.lower() \
-                   .replace(" ", "-").replace("/", "-").replace("#", "sharp")
+                urllib.parse.quote( \
+                    tag.lower() \
+                       .replace(" ", "-").replace("/", "-").replace("#", "sharp") \
+                )
             )
         return result
 
