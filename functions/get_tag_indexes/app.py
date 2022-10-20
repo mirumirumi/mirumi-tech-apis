@@ -3,6 +3,7 @@ from typing import Any, cast, Literal, TypedDict
 
 import os
 import boto3
+import urllib.parse
 from constants import *
 from proxy_response import *
 from boto3.dynamodb.conditions import Attr
@@ -19,13 +20,13 @@ post_table = boto3.resource("dynamodb").Table(POST_TABLE_NAME)
 def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyResponse:
     logger.info(event)
     page = int(event["queryStringParameters"]["page"])
-    tag = event["queryStringParameters"]["tag"]
+    tag = event["queryStringParameters"]["tag"]  # no encoded
 
     result = None
     count = None
     try:
         res = post_table.scan(
-            FilterExpression=Attr("search_tags").contains(tag),
+            FilterExpression=Attr("search_tags").contains(urllib.parse.quote(tag)),
             ProjectionExpression="slag, title, created_at, updated_at",
         )
         result = res["Items"]
