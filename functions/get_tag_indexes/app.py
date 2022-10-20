@@ -36,7 +36,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
 
     result.sort(key=lambda x: cast(str, x["created_at"]), reverse=True)
 
-    result = result[(page - 1) * PAGE_ITEMS : page * PAGE_ITEMS]
+    result = result[(page-1) * PAGE_ITEMS:page * PAGE_ITEMS]
 
     return s200({
         "items": result,

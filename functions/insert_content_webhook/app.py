@@ -40,7 +40,7 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
             continue
         changed_posts.append(re.sub("posts\/(.*?.md)$", "\\1", changed_file_path))  # https://regex101.com/r/ZHOHDe/1
 
-    posts_to_insert :list[Post] = list()
+    posts_to_insert: list[Post] = list()
     for file_name in changed_posts:
         res = requests.get(endpoint_base + file_name, headers=headers, timeout=(9.0, 90.0))
         try:
@@ -54,13 +54,15 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
             posts_to_insert.append(post)
 
     for post in posts_to_insert:
-        post.body = markdown2.markdown(post.body, extras={
-            "fenced-code-blocks": None,
-            "highlightjs-lang": None,
-            "code-friendly": None,
-            "strike": None,
-            "tables": None,
-        })
+        post.body = markdown2.markdown(
+            post.body, extras={
+                "fenced-code-blocks": None,
+                "highlightjs-lang": None,
+                "code-friendly": None,
+                "strike": None,
+                "tables": None,
+            }
+        )
 
     for post in posts_to_insert:
         post.body = customize_html(post.body)

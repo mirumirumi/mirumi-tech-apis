@@ -25,12 +25,10 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
     for i, q in enumerate(queries):
         try:
             res = post_table.scan(
-                FilterExpression=
-                    Attr("slag").contains(query)
-                    | Attr("search_title").contains(q)
-                    | Attr("search_tags").contains(q)
-                    | Attr("search_tags").contains("-".join(queries))
-                ,
+                FilterExpression=Attr("slag").contains(query)
+                | Attr("search_title").contains(q)
+                | Attr("search_tags").contains(q)
+                | Attr("search_tags").contains("-".join(queries)),
                 ProjectionExpression="slag, title, created_at, updated_at",
             )
 

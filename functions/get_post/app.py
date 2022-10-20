@@ -29,5 +29,5 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
     except Exception as e:
         logger.exception(e)
         return s500()
-    
+
     return s200(result)
