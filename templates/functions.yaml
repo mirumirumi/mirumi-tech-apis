@@ -249,3 +249,12 @@ Resources:
         - python3.9
     Metadata:
       BuildMethod: python3.9
+
+
+Outputs:
+  RestApisDomain:
+    Value: !Sub
+      - ${Id}.execute-api.ap-northeast-1.amazonaws.com
+      - Id: !Ref RestApis
+  RestApisStageName:
+    Value: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
