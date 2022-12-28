@@ -36,5 +36,5 @@ Resources:
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         EnvironmentName: !Ref EnvironmentName
-        RestApisDomain: !GetAtt FunctionsStack.Outputs.RestApisDomain
-        RestApisStageName: !GetAtt FunctionsStack.Outputs.RestApisStageName
+        # RestApisDomain: !GetAtt FunctionsStack.Outputs.RestApisDomain
+        # RestApisStageName: !GetAtt FunctionsStack.Outputs.RestApisStageName
