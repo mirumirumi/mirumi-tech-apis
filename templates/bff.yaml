@@ -12,10 +12,6 @@ Parameters:
     AllowedValues:
       - dev
       - prd
-  # RestApisDomain:
-  #   Type: String
-  # RestApisStageName:
-  #   Type: String
 
 
 Conditions:
@@ -104,50 +100,6 @@ Resources:
           AcmCertificateArn: arn:aws:acm:us-east-1:145943270736:certificate/cd9c6ffd-8733-403c-a856-665835f70a4d
           MinimumProtocolVersion: TLSv1.2_2021
           SslSupportMethod: sni-only
-  # API GW 用 CloudFront（Full SSG ができるようになったので使わなくなった）
-  # RestApisCloudFront:
-  #   Type: AWS::CloudFront::Distribution
-  #   Properties:
-  #     DistributionConfig:
-  #       DefaultCacheBehavior:
-  #         AllowedMethods:
-  #           - GET
-  #           - HEAD
-  #           - OPTIONS
-  #           - PUT
-  #           - POST
-  #           - PATCH
-  #           - DELETE
-  #         CachedMethods:
-  #           - GET
-  #           - HEAD
-  #         CachePolicyId: !If [IsPrd, a46af3a5-45f7-4916-9868-2009322582fc, 38bfaa6b-f33a-4f5b-9859-b0a4fcbf0041]  # common-${env}-caching-optimized-and-more
-  #         Compress: true
-  #         ResponseHeadersPolicyId: 5cc3b908-e619-4b99-88e5-2cf7f45965bd  # https://go.aws/3sJ7tqV
-  #         TargetOriginId: !Ref RestApisStageName
-  #         ViewerProtocolPolicy: https-only
-  #       Enabled: true
-  #       HttpVersion: http2
-  #       Origins:
-  #         - DomainName: !Ref RestApisDomain
-  #           Id: !Ref RestApisStageName
-  #           CustomOriginConfig:
-  #             OriginProtocolPolicy: https-only
-  #             OriginSSLProtocols: 
-  #               - TLSv1.2
-  #           OriginPath: !Sub
-  #             - /${RestApisStageName}
-  #             - RestApisStageName: !Ref RestApisStageName
-  #       Restrictions:
-  #         GeoRestriction: 
-  #           RestrictionType: none
-
-  # OriginAccessIdentity:
-  #   Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
-  #   Condition: IsPrd
-  #   Properties: 
-  #     CloudFrontOriginAccessIdentityConfig: 
-  #       Comment: !Sub ${ResourcePrefix}-${EnvironmentName}-static-hosting
 
   StaticSiteHostingPublicReadPolicy:
     Type: AWS::S3::BucketPolicy
@@ -175,25 +127,3 @@ Resources:
             }
           ]
         }
-
-  # OAIBucketPolicy:
-  #   Type: AWS::S3::BucketPolicy
-  #   Condition: IsPrd
-  #   Properties: 
-  #     Bucket: !Ref StaticHostingBucket
-  #     PolicyDocument: 
-  #       {
-  #         "Id": "OAIBucketPolicy",
-  #         "Version": "2012-10-17",
-  #         "Statement": [
-  #           {
-  #             "Sid": "OAIBucketPolicy",
-  #             "Effect": "Allow",
-  #             "Principal": {
-  #               "AWS": !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${OriginAccessIdentity}"
-  #             },
-  #             "Action": "s3:GetObject",
-  #             "Resource": !Sub "arn:aws:s3:::${StaticHostingBucket}/*"
-  #           }
-  #         ]
-  #       }
