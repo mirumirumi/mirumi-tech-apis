@@ -12,7 +12,7 @@ Parameters:
     AllowedValues:
       - dev
       - prd
-  AllowedClientOrigin:
+  ApiAllowOrigin:
     Type: String
   UnHashedApiKey:
     Type: String
@@ -26,7 +26,7 @@ Resources:
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         EnvironmentName: !Ref EnvironmentName
-        AllowedClientOrigin: !Ref AllowedClientOrigin
+        ApiAllowOrigin: !Ref ApiAllowOrigin
         UnHashedApiKey: !Ref UnHashedApiKey
 
   BffStack:
