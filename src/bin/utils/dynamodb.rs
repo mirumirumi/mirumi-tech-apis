@@ -6,9 +6,9 @@ use serde::{
 use serde_json::json;
 use std::collections::HashMap;
 
-pub struct AttributeValueMap(pub HashMap<String, AttributeValue>);
+pub struct AttributeValueItem(pub HashMap<String, AttributeValue>);
 
-impl AttributeValueMap {
+impl AttributeValueItem {
     fn serialize_attribute_value(value: &AttributeValue) -> serde_json::Value {
         match value {
             AttributeValue::S(s) => json!(s),
@@ -26,7 +26,7 @@ impl AttributeValueMap {
     }
 }
 
-impl Serialize for AttributeValueMap {
+impl Serialize for AttributeValueItem {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -39,5 +39,48 @@ impl Serialize for AttributeValueMap {
         }
 
         map.end()
+    }
+}
+
+pub trait ListToVec<T> {
+    fn list_to_vec(&self, key: &str) -> Vec<T>;
+}
+
+impl ListToVec<String> for AttributeValueItem {
+    fn list_to_vec(&self, key: &str) -> Vec<String> {
+        if let AttributeValue::L(items) = self.0.get(key).unwrap() {
+            items
+                .into_iter()
+                .map(|item| item.as_s().unwrap().clone())
+                .collect::<Vec<String>>()
+        } else {
+            panic!("`list_to_vec` function is not implemented for any type other than `AttributeValue::L` type.")
+        }
+    }
+}
+
+impl ListToVec<i64> for AttributeValueItem {
+    fn list_to_vec(&self, key: &str) -> Vec<i64> {
+        if let AttributeValue::L(items) = self.0.get(key).unwrap() {
+            items
+                .into_iter()
+                .map(|item| item.as_n().unwrap().parse::<i64>().unwrap())
+                .collect::<Vec<i64>>()
+        } else {
+            panic!("`list_to_vec` function is not implemented for any type other than `AttributeValue::L` type.")
+        }
+    }
+}
+
+impl ListToVec<bool> for AttributeValueItem {
+    fn list_to_vec(&self, key: &str) -> Vec<bool> {
+        if let AttributeValue::L(items) = self.0.get(key).unwrap() {
+            items
+                .into_iter()
+                .map(|item| item.as_bool().unwrap().clone())
+                .collect::<Vec<bool>>()
+        } else {
+            panic!("`list_to_vec` function is not implemented for any type other than `AttributeValue::L` type.")
+        }
     }
 }

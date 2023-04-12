@@ -36,7 +36,11 @@ mod utils {
     pub mod responses;
 }
 
-use utils::{dynamodb, lambda, responses::*};
+use utils::{
+    dynamodb::{AttributeValueItem, ListToVec},
+    lambda,
+    responses::*,
+};
 
 #[rustfmt::skip]
 static ENV_NAME: Lazy<String> = Lazy::new(|| env::var("ENV_NAME").expect("\"ENV_NAME\" env var is not set."));
@@ -70,7 +74,8 @@ async fn main() -> Result<(), LambdaError> {
             format!("/mirumitech-{}-apis", &*ENV_NAME).as_str(),
             Router::new()
                 .route("/get-top-indexes", get(get_top_indexes))
-                .route("/get-post", get(get_post)),
+                .route("/get-post", get(get_post))
+                .route("/get-all-tags", get(get_all_tags)),
         )
         .layer(
             ServiceBuilder::new()
@@ -102,7 +107,7 @@ async fn get_top_indexes(
 
     let count = items.len();
 
-    items.sort_by(|a, b| {
+    items.sort_unstable_by(|a, b| {
         let a_created_at = a.get("created_at").unwrap().as_s().unwrap();
         let b_created_at = b.get("created_at").unwrap().as_s().unwrap();
         a_created_at.cmp(b_created_at).reverse()
@@ -110,10 +115,8 @@ async fn get_top_indexes(
 
     let mut result: Vec<HashMap<String, AttributeValue>> = items;
 
-    if page == "all" {
-        // In "all-entries" page
-    } else {
-        // In top indexes (contains "page/1")
+    if page != "all" {
+        // In top indexes (contains "page/1") (do nothing when `page == "all`)
 
         let page = page
             .parse::<usize>()
@@ -127,7 +130,7 @@ async fn get_top_indexes(
     Json(json!({
         "items": result
                 .iter()
-                .map(|item| serde_json::to_value(dynamodb::AttributeValueMap(item.clone())).unwrap())
+                .map(|item| serde_json::to_value(AttributeValueItem(item.clone())).unwrap())
                 .collect::<Vec<serde_json::Value>>(),
         "counte": count,
     }))
@@ -150,10 +153,67 @@ async fn get_post(
 
     let item = res.item().unwrap();
 
-    Json(json!(serde_json::to_value(dynamodb::AttributeValueMap(
+    Json(json!(serde_json::to_value(AttributeValueItem(
         item.to_owned()
     ))
     .unwrap()))
+}
+
+#[derive(Clone)]
+struct TableTagData {
+    tags: Vec<String>,
+    search_tags: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct SearchResult {
+    tag: String,
+    search_tag: String,
+}
+
+impl SearchResult {
+    fn exists_tag(result: &[SearchResult], tag: &str) -> bool {
+        result.iter().any(|result| result.tag == tag)
+    }
+}
+
+async fn get_all_tags(Extension(sdk): Extension<Arc<Sdk>>) -> impl IntoResponse {
+    let res = sdk
+        .dynamodb
+        .scan()
+        .table_name(&*POST_TABLE_NAME)
+        .projection_expression("tags, search_tags")
+        .send()
+        .await
+        .unwrap();
+
+    let posts: Vec<TableTagData> = res
+        .items()
+        .unwrap()
+        .into_iter()
+        .map(|item| {
+            let tags = AttributeValueItem(item.clone()).list_to_vec("tags");
+            let search_tags = AttributeValueItem(item.clone()).list_to_vec("search_tags");
+            TableTagData { tags, search_tags }
+        })
+        .collect();
+
+    let mut result: Vec<SearchResult> = vec![];
+
+    for post in posts {
+        for (i, tag) in post.tags.iter().enumerate() {
+            if !SearchResult::exists_tag(&result, &tag) {
+                result.push(SearchResult {
+                    tag: tag.to_string(),
+                    search_tag: post.search_tags[i].clone(),
+                })
+            }
+        }
+    }
+
+    result.sort_unstable_by(|a, b| a.tag.cmp(&b.tag));
+
+    Json(json!(result))
 }
 
 // struct LogLayer<S> {

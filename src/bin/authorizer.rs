@@ -2,7 +2,6 @@ use anyhow::{Error, Ok, Result};
 use lambda_runtime::{service_fn, LambdaEvent};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::env;
 
@@ -24,12 +23,14 @@ struct PolicyStatement {
 }
 
 #[derive(Deserialize, Serialize)]
+#[allow(non_snake_case)]
 struct PolicyDocument {
     Version: String,
     Statement: Vec<Statement>,
 }
 
 #[derive(Deserialize, Serialize)]
+#[allow(non_snake_case)]
 struct Statement {
     Action: String,
     Effect: String,

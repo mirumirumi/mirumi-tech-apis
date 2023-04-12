@@ -1,6 +1,7 @@
 use anyhow::Result;
 use lambda_http::{Body, Error, Response};
 
+#[allow(dead_code)]
 fn base_response_builder() -> http::response::Builder {
     Response::builder().header("Content-Type", "application/json")
 }
