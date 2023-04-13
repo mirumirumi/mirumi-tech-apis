@@ -1,5 +1,5 @@
 use anyhow::{Error, Result};
-use aws_sdk_dynamodb::types::AttributeValue;
+use aws_sdk_dynamodb::types::{AttributeValue, Condition, ExpectedAttributeValue};
 use axum::{
     body::Body as AxumBody,
     error_handling::HandleError,
@@ -21,6 +21,7 @@ use lambda_http::{
     Body, Error as LambdaError, Request as LambdaRequest, RequestExt, Response,
 };
 use once_cell::sync::Lazy;
+use percent_encoding::{utf8_percent_encode, CONTROLS};
 use serde::{
     ser::{SerializeMap, SerializeSeq, Serializer},
     Deserialize, Serialize,
@@ -75,7 +76,8 @@ async fn main() -> Result<(), LambdaError> {
             Router::new()
                 .route("/get-top-indexes", get(get_top_indexes))
                 .route("/get-post", get(get_post))
-                .route("/get-all-tags", get(get_all_tags)),
+                .route("/get-all-tags", get(get_all_tags))
+                .route("/get-tag-indexes", get(get_tag_indexes)),
         )
         .layer(
             ServiceBuilder::new()
@@ -107,11 +109,7 @@ async fn get_top_indexes(
 
     let count = items.len();
 
-    items.sort_unstable_by(|a, b| {
-        let a_created_at = a.get("created_at").unwrap().as_s().unwrap();
-        let b_created_at = b.get("created_at").unwrap().as_s().unwrap();
-        a_created_at.cmp(b_created_at).reverse()
-    });
+    sort_by_created_at(&mut items);
 
     let mut result: Vec<HashMap<String, AttributeValue>> = items;
 
@@ -120,11 +118,9 @@ async fn get_top_indexes(
 
         let page = page
             .parse::<usize>()
-            .expect("Failed to parse page number to i32 from String.");
+            .expect("Failed to parse page number to usize from String.");
 
-        let start = (page - 1) * (&*PAGE_ITEMS);
-        let end = (page) * (&*PAGE_ITEMS);
-        result = result[start..end].to_vec();
+        result = slice_posts(result, page, count);
     }
 
     Json(json!({
@@ -132,7 +128,7 @@ async fn get_top_indexes(
                 .iter()
                 .map(|item| serde_json::to_value(AttributeValueItem(item.clone())).unwrap())
                 .collect::<Vec<serde_json::Value>>(),
-        "counte": count,
+        "count": count,
     }))
 }
 
@@ -214,6 +210,69 @@ async fn get_all_tags(Extension(sdk): Extension<Arc<Sdk>>) -> impl IntoResponse 
     result.sort_unstable_by(|a, b| a.tag.cmp(&b.tag));
 
     Json(json!(result))
+}
+
+async fn get_tag_indexes(
+    Extension(sdk): Extension<Arc<Sdk>>,
+    Query(query_params): Query<HashMap<String, String>>,
+) -> impl IntoResponse {
+    let page = query_params.get("page").unwrap();
+    let tag = query_params.get("tag").unwrap(); // No encoded (link string, not title)
+
+    let encoded_tag = utf8_percent_encode(tag, CONTROLS).to_string();
+
+    let res = sdk
+        .dynamodb
+        .scan()
+        .table_name(&*POST_TABLE_NAME)
+        .filter_expression("contains(search_tags, :encoded_tag)")
+        .expression_attribute_values(":encoded_tag", AttributeValue::S(encoded_tag))
+        .projection_expression("slag, title, created_at, updated_at")
+        .send()
+        .await
+        .unwrap();
+
+    let mut items = res.items().unwrap().to_vec();
+    let count = items.len();
+
+    sort_by_created_at(&mut items);
+
+    let mut result: Vec<HashMap<String, AttributeValue>> = items;
+
+    let page = page
+        .parse::<usize>()
+        .expect("Failed to parse page number to usize from String.");
+
+    result = slice_posts(result, page, count);
+
+    Json(json!({
+        "items": result
+                .iter()
+                .map(|item| serde_json::to_value(AttributeValueItem(item.clone())).unwrap())
+                .collect::<Vec<serde_json::Value>>(),
+        "count": count,
+    }))
+}
+
+fn sort_by_created_at(items: &mut Vec<HashMap<String, AttributeValue>>) {
+    items.sort_unstable_by(|a, b| {
+        let a_created_at = a.get("created_at").unwrap().as_s().unwrap();
+        let b_created_at = b.get("created_at").unwrap().as_s().unwrap();
+        a_created_at.cmp(b_created_at).reverse()
+    });
+}
+
+fn slice_posts<T: std::clone::Clone>(posts: Vec<T>, page: usize, count: usize) -> Vec<T> {
+    let collect_page_num = count / &*PAGE_ITEMS;
+    let remainder_page_num = count % &*PAGE_ITEMS;
+
+    if page <= collect_page_num {
+        let start = (page - 1) * (&*PAGE_ITEMS);
+        let end = (page) * (&*PAGE_ITEMS);
+        posts[start..end].to_vec()
+    } else {
+        posts[..remainder_page_num].to_vec()
+    }
 }
 
 // struct LogLayer<S> {
