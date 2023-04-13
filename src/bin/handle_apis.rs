@@ -77,7 +77,8 @@ async fn main() -> Result<(), LambdaError> {
                 .route("/get-top-indexes", get(get_top_indexes))
                 .route("/get-post", get(get_post))
                 .route("/get-all-tags", get(get_all_tags))
-                .route("/get-tag-indexes", get(get_tag_indexes)),
+                .route("/get-tag-indexes", get(get_tag_indexes))
+                .route("/search-post", get(search_post)),
         )
         .layer(
             ServiceBuilder::new()
@@ -252,6 +253,49 @@ async fn get_tag_indexes(
                 .collect::<Vec<serde_json::Value>>(),
         "count": count,
     }))
+}
+
+async fn search_post(
+    Extension(sdk): Extension<Arc<Sdk>>,
+    Query(query_params): Query<HashMap<String, String>>,
+) -> impl IntoResponse {
+    let query = query_params.get("query").unwrap().to_lowercase();
+
+    let queries: Vec<&str> = query.split_whitespace().collect();
+    let mut candidates: Vec<_> = vec![];
+
+    for (i, q) in queries.iter().enumerate() {
+        let res = sdk
+            .dynamodb
+            .scan()
+            .table_name(&*POST_TABLE_NAME)
+            .filter_expression("contains(slag, :query) OR contains(search_title, :q) OR contains(search_tags, :q) OR contains(search_tags, :joined)")
+            .expression_attribute_values(":query", AttributeValue::S(query.clone()))
+            .expression_attribute_values(":q", AttributeValue::S(q.to_string()))
+            .expression_attribute_values(":joined", AttributeValue::S(queries.join("-")))
+            .projection_expression("slag, title, created_at, updated_at")
+            .send()
+            .await
+            .unwrap();
+
+        let items = res.items().unwrap().to_vec();
+
+        if i == 0 {
+            candidates = items;
+        } else {
+            for item in items {
+                candidates = candidates
+                    .into_iter()
+                    .filter(|candidate| candidate.get("slag").unwrap() != item.get("slag").unwrap())
+                    .collect();
+            }
+        }
+    }
+
+    Json(json!(candidates
+        .iter()
+        .map(|item| serde_json::to_value(AttributeValueItem(item.clone())).unwrap())
+        .collect::<Vec<serde_json::Value>>()))
 }
 
 fn sort_by_created_at(items: &mut Vec<HashMap<String, AttributeValue>>) {
