@@ -1,44 +1,17 @@
-#[allow(unused_imports)]
-use anyhow::{Error, Result};
-#[allow(unused_imports)]
-use aws_sdk_dynamodb::types::{AttributeValue, Condition, ExpectedAttributeValue};
-#[allow(unused_imports)]
+use anyhow::Result;
+use aws_sdk_dynamodb::types::AttributeValue;
 use axum::{
-    body::Body as AxumBody,
-    error_handling::HandleError,
-    extract::{Extension, Path, Query},
-    http::{Request as AxumRequest, StatusCode},
-    response::{IntoResponse, Json, Result as AxumResult},
-    routing::{get, post},
+    extract::{Extension, Query},
+    response::{IntoResponse, Json},
+    routing::get,
     Router,
 };
-#[allow(unused_imports)]
-use http::{
-    header::{self, HeaderName},
-    Request as HttpRequest, Response as HttpResponse,
-};
-#[allow(unused_imports)]
-use lambda_http::{
-    http::Method,
-    request::RequestContext,
-    run, service_fn,
-    tower::{layer::layer_fn, Layer, Service, ServiceBuilder, ServiceExt},
-    Body, Error as LambdaError, Request as LambdaRequest, RequestExt, Response,
-};
+use lambda_http::{run, tower::ServiceBuilder, Error as LambdaError};
 use once_cell::sync::Lazy;
 use percent_encoding::{utf8_percent_encode, CONTROLS};
-#[allow(unused_imports)]
-use serde::{
-    ser::{SerializeMap, SerializeSeq, Serializer},
-    Deserialize, Serialize,
-};
+use serde::Serialize;
 use serde_json::json;
-#[allow(unused_imports)]
-use std::{cmp::Ordering, collections::HashMap, convert::Infallible, env, str::FromStr, sync::Arc};
-#[allow(unused_imports)]
-use tower_http::cors::{Any, CorsLayer};
-#[allow(unused_imports)]
-use tracing::info;
+use std::{collections::HashMap, env, sync::Arc};
 
 mod utils {
     pub mod dynamodb;
@@ -55,10 +28,7 @@ use utils::{
 static ENV_NAME: Lazy<String> = Lazy::new(|| env::var("ENV_NAME").expect("\"ENV_NAME\" env var is not set."));
 #[rustfmt::skip]
 static POST_TABLE_NAME: Lazy<String> = Lazy::new(|| env::var("POST_TABLE_NAME").expect("\"POST_TABLE_NAME\" env var is not set."));
-#[rustfmt::skip]
 static PAGE_ITEMS: Lazy<usize> = Lazy::new(|| 13);
-// #[rustfmt::skip]
-// static DB_ENDPOINT: Lazy<&str> = Lazy::new(|| "postgresql://main:rL0FlUoHOzm4LGCEdsJcpA@mirumi-tech-4368.6xw.cockroachlabs.cloud:26257/mirumi-tech-4368.{os.environ['ENV_NAME']}?sslmode=verify-full&sslrootcert=./root.crt");
 
 #[derive(Clone)]
 struct Sdk {
@@ -67,11 +37,7 @@ struct Sdk {
 
 #[tokio::main]
 async fn main() -> Result<(), LambdaError> {
-    // let log_service = service_fn(|request: LambdaRequest| async move {
-    //     let context = request.lambda_context();
-    //     lambda::log_incoming_event(&request, context);
-    //     Ok::<_, Infallible>(http::Response::new(()))
-    // });
+    // `log_incoming_event()` is not working now.
 
     let config = aws_config::load_from_env().await;
     let dynamodb = aws_sdk_dynamodb::Client::new(&config);
@@ -93,8 +59,6 @@ async fn main() -> Result<(), LambdaError> {
                 .layer(Extension(Arc::new(sdk)))
                 .layer(lambda::init_app()),
         );
-
-    // let app = LogLayer::new(log_service).layer(router);
 
     run(router).await
 }

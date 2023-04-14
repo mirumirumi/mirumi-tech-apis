@@ -41,7 +41,7 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       Name: !Sub ${ResourcePrefix}-${EnvironmentName}-for-python
-      StageName: !Sub ${ResourcePrefix}-${EnvironmentName}}-for-python-apis
+      StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-for-python-apis
       Auth:
         Authorizers:
           KeyAuth:
@@ -65,6 +65,8 @@ Resources:
       MemorySize: 512
       Timeout: 90
       Layers:
+        - !Ref ImportModulesLayer
+        - !Ref UtilsLayer
         - !Ref InsertContentWebhookLayer
       Policies:
         - DynamoDBCrudPolicy:

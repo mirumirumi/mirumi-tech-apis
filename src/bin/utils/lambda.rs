@@ -1,37 +1,17 @@
 use anyhow::{Error, Result};
-#[allow(unused_imports)]
-use axum::{
-    body::Body as AxumBody,
-    response::{Json, Result as AxumResult},
-    routing::{get, post},
-    Router,
-};
 use base64::{self, engine::general_purpose, Engine};
 use http::{
     header::{self, HeaderName},
     HeaderValue,
 };
 use image::{self, ImageFormat};
-#[allow(unused_imports)]
 use lambda_http::{
-    http::Method,
-    lambda_runtime::Context as LambdaContext,
-    request::RequestContext,
-    service_fn,
-    tower::{
-        layer::{
-            util::{Identity, Stack},
-            LayerFn,
-        },
-        util::ServiceFn,
-        MakeService, Service, ServiceBuilder,
-    },
-    Body, Error as LambdaError, Request as LambdaRequest, RequestExt, Response,
+    http::Method, lambda_runtime::Context as LambdaContext, request::RequestContext,
+    Request as LambdaRequest, RequestExt,
 };
 use regex::Regex;
 use std::{env, io::Cursor, str::FromStr};
-#[allow(unused_imports)]
-use tower_http::cors::{Cors, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tracing::{info, Level};
 
 pub fn init_app() -> CorsLayer

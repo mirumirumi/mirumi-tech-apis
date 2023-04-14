@@ -62,8 +62,18 @@ jobs:
 
       - name: Deploy Python resources (dev)
         if: ${{ github.ref == 'refs/heads/main' }}
-        run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --config-env dev
+        run: |
+          sam deploy \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --config-file ./samconfig-for-python.toml \
+            --config-env dev
 
       - name: Deploy Python resources (prd)
         if: ${{ github.ref == 'refs/heads/release/prd' }}
-        run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --config-env prd
+        run: |
+          sam deploy \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --config-file ./samconfig-for-python.toml \
+            --config-env prd
