@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: functions and apis
+
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Default: mirumitech
+  EnvironmentName:
+    Type: String
+    AllowedValues:
+      - dev
+      - prd
+  ApiAllowOrigin:
+    Type: String
+  AuthorizerFunctionArn:
+    Type: String
+  PostTableName:
+    Type: String
+
+
+Conditions:
+  IsPrd: !Equals [!Ref EnvironmentName, prd]
+
+
+Globals:
+  Function:
+    MemorySize: 128
+    Timeout: 30
+    Environment:
+      Variables:
+        LOG_LEVEL: !If [IsPrd, INFO, DEBUG]
+        ENV_NAME: !Sub ${EnvironmentName}
+        RUST_BACKTRACE: 1
+        API_ALLOW_ORIGIN: !Sub ${ApiAllowOrigin}
+
+
+Resources:
+  RestApis:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${ResourcePrefix}-${EnvironmentName}-for-python
+      StageName: !Sub ${ResourcePrefix}-${EnvironmentName}}-for-python-apis
+      Auth:
+        Authorizers:
+          KeyAuth:
+            FunctionArn: !Ref AuthorizerFunctionArn
+            Identity:
+              ReauthorizeEvery: 0
+      Cors:
+        AllowOrigin: !Sub "'${ApiAllowOrigin}'"
+        AllowHeaders: "'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token'"
+        AllowMethods: "'GET, POST, PUT, PATCH, DELETE, OPTIONS'"
+
+  InsertContentWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-insert-content-webhook
+      CodeUri: functions/insert_content_webhook
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Timeout: 90
+      Layers:
+        - !Ref InsertContentWebhookLayer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostTableName
+      Environment:
+        Variables:
+          POST_TABLE_NAME: !Ref PostTableName
+      Events:
+        RestApis:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApis
+            Path: /insert-content-webhook
+            Method: POST
+            Auth: 
+              Authorizer: KeyAuth
+
+  ImportModulesLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: import modules containing PowerTools
+      ContentUri: functions/layers/import_modules_layer
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
+  UtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: utils
+      ContentUri: functions/layers/utils_layer
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
+  InsertContentWebhookLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: for insert-content-webhook
+      ContentUri: functions/layers/insert_content_webhook_layer
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9

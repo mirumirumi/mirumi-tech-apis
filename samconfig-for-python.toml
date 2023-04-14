@@ -1,0 +1,41 @@
+version = 0.1
+
+[dev]
+[dev.deploy]
+[dev.deploy.parameters]
+stack_name = "mirumitech-dev-python"
+s3_bucket = "common-dev-sam-artifactstore"
+s3_prefix = "mirumitech-dev-python"
+region = "ap-northeast-1"
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM"
+parameter_overrides = """\
+    EnvironmentName=\"dev\" \
+    ApiAllowOrigin=\"http://localhost:17329\" \
+    UnHashedApiKey=\"J2wr_HLSt3j9GBPd\" \
+    AuthorizerFunctionArn=\"arn:aws:lambda:ap-northeast-1:145943270736:function:mirumitech-dev-authorizer\" \
+    PostTableName=\"mirumitech-dev-post\" \
+    RestApisId=\"ytztx20yia\" \
+"""
+tags = "project=\"mirumitech\" env=\"dev\" IaC=\"cfn\""
+confirm_changeset = false
+fail_on_empty_changeset = false
+
+[prd]
+[prd.deploy]
+[prd.deploy.parameters]
+stack_name = "mirumitech-prd-python"
+s3_bucket = "common-prd-sam-artifactstore"
+s3_prefix = "mirumitech-prd-python"
+region = "ap-northeast-1"
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM"
+parameter_overrides = """\
+    EnvironmentName=\"prd\" \
+    ApiAllowOrigin=\"https://mirumi.tech\" \
+    UnHashedApiKey=\"Yl7v27Tf5Wu_tvLV\" \
+    AuthorizerFunctionArn=\"arn:aws:lambda:ap-northeast-1:145943270736:function:mirumitech-prd-authorizer\" \
+    PostTableName=\"mirumitech-prd-post\" \
+    RestApisId=\"s9ubhi41m7\" \
+"""
+tags = "project=\"mirumitech\" env=\"prd\" IaC=\"cfn\""
+confirm_changeset = false
+fail_on_empty_changeset = false

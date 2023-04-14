@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import cast
+
 import re
 import urllib.parse
 from constants import *
@@ -30,14 +33,19 @@ def customize_html(html: str) -> str:
 
 
 def remove_n_after_br(html: str) -> str:
-    return html.replace("<br />\n", "<br />")
+    result: str = html.replace("<br />\n", "<br />")
+    return result
 
 
 def add_toc_attrs(html: str) -> str:
     headings = re.findall("((<h[234])>(.*?)(<\/h[234]>))", html)
 
     for i, head in enumerate(headings):
-        html = re.sub(headings[i][0], f"{head[1]} id=\"{urllib.parse.quote(head[2])}\" class=\"toc_item\" data-toc-index=\"{i + 1}\">{head[2]}{head[3]}", html)
+        html = re.sub(
+            headings[i][0],
+            f'{head[1]} id="{urllib.parse.quote(head[2])}" class="toc_item" data-toc-index="{i + 1}">{head[2]}{head[3]}',
+            html,
+        )
 
     return html
 
@@ -64,7 +72,9 @@ def convert_to_blogcard(html: str) -> str:
         </div>
     </div>
 </a>
-"""[1:-1]
+"""[
+            1:-1
+        ]
 
         fullpath: str = link[1]
 
@@ -103,11 +113,11 @@ def convert_to_common_box(html: str) -> str:
 
     for box in boxes:
         if box[1] == "info":
-            replace_to = "<div class=\"box-common box-info\">"
+            replace_to = '<div class="box-common box-info">'
         elif box[1] == "alert":
-            replace_to = "<div class=\"box-common box-alert\">"
+            replace_to = '<div class="box-common box-alert">'
         elif "rewrite" in box[1]:
-            replace_to = "<div class=\"box-common box-rewrite " + re.sub('rewrite\s*(\d+\/\d+\/\d+)', '\\1', box[1]) + "\">"
+            replace_to = '<div class="box-common box-rewrite ' + re.sub("rewrite\s*(\d+\/\d+\/\d+)", "\\1", box[1]) + '">'
 
         html = html.replace(box[0], replace_to + "<p>" + box[2] + box[6] + "</p></div>")
 
@@ -115,17 +125,17 @@ def convert_to_common_box(html: str) -> str:
 
 
 def add_date_into_rewritebox(html: str) -> str:
-    boxes = re.findall("(<div class=\"box-common box-rewrite (\d+\/\d+\/\d+)\"><p>)", html)
+    boxes = re.findall('(<div class="box-common box-rewrite (\d+\/\d+\/\d+)"><p>)', html)
 
     for box in boxes:
-        html = html.replace(box[0], box[0] + "<span class=\"rewrite-date\">追記 (" + box[1] + ") ：</span>")
+        html = html.replace(box[0], box[0] + '<span class="rewrite-date">追記 (' + box[1] + ") ：</span>")
 
     return html
 
 
 def fix_img_src(html: str) -> str:
     return re.sub(
-        "(<p.*?><img.*?src=\")((.*?)images\/)(.*?)(\".*?\/>\s*\n?.*?<\/p>)",  # https://regex101.com/r/8ckfux/1
+        '(<p.*?><img.*?src=")((.*?)images\/)(.*?)(".*?\/>\s*\n?.*?<\/p>)',  # https://regex101.com/r/8ckfux/1
         "\\1https://raw.githubusercontent.com/mirumirumi/mirumi-tech-content/main/images/\\4\\5",
-        html
+        html,
     )

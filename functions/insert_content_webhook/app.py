@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, cast, Literal, TypedDict
+from typing import Any
 
 import os
 import re
@@ -55,13 +55,14 @@ def lambda_handler(event: dict[str, Any], context: LambdaContext) -> ProxyRespon
 
     for post in posts_to_insert:
         post.body = markdown2.markdown(
-            post.body, extras={
+            post.body,
+            extras={
                 "fenced-code-blocks": None,
                 "highlightjs-lang": None,
                 "code-friendly": None,
                 "strike": None,
                 "tables": None,
-            }
+            },
         )
 
     for post in posts_to_insert:

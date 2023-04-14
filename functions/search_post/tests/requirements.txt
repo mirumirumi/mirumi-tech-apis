@@ -1,4 +1,0 @@
-pytest
-unittest
-freezegun
-boto3
