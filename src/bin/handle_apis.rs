@@ -1,5 +1,8 @@
+#[allow(unused_imports)]
 use anyhow::{Error, Result};
+#[allow(unused_imports)]
 use aws_sdk_dynamodb::types::{AttributeValue, Condition, ExpectedAttributeValue};
+#[allow(unused_imports)]
 use axum::{
     body::Body as AxumBody,
     error_handling::HandleError,
@@ -9,10 +12,12 @@ use axum::{
     routing::{get, post},
     Router,
 };
+#[allow(unused_imports)]
 use http::{
     header::{self, HeaderName},
     Request as HttpRequest, Response as HttpResponse,
 };
+#[allow(unused_imports)]
 use lambda_http::{
     http::Method,
     request::RequestContext,
@@ -22,13 +27,17 @@ use lambda_http::{
 };
 use once_cell::sync::Lazy;
 use percent_encoding::{utf8_percent_encode, CONTROLS};
+#[allow(unused_imports)]
 use serde::{
     ser::{SerializeMap, SerializeSeq, Serializer},
     Deserialize, Serialize,
 };
-use serde_json::{json, Value};
+use serde_json::json;
+#[allow(unused_imports)]
 use std::{cmp::Ordering, collections::HashMap, convert::Infallible, env, str::FromStr, sync::Arc};
+#[allow(unused_imports)]
 use tower_http::cors::{Any, CorsLayer};
+#[allow(unused_imports)]
 use tracing::info;
 
 mod utils {
@@ -40,7 +49,6 @@ mod utils {
 use utils::{
     dynamodb::{AttributeValueItem, ListToVec},
     lambda,
-    responses::*,
 };
 
 #[rustfmt::skip]
@@ -101,6 +109,9 @@ async fn get_top_indexes(
         .dynamodb
         .scan()
         .table_name(&*POST_TABLE_NAME)
+        // 記事一覧および全記事一覧にリンクが存在していなければ generate もされないので get-post で単独の対応は不要
+        .filter_expression("attribute_not_exists(publish) OR publish = :publish")
+        .expression_attribute_values(":publish", AttributeValue::Bool(true))
         .projection_expression("slag, title, created_at, updated_at")
         .send()
         .await
@@ -179,6 +190,8 @@ async fn get_all_tags(Extension(sdk): Extension<Arc<Sdk>>) -> impl IntoResponse 
         .dynamodb
         .scan()
         .table_name(&*POST_TABLE_NAME)
+        .filter_expression("attribute_not_exists(publish) OR publish = :publish")
+        .expression_attribute_values(":publish", AttributeValue::Bool(true))
         .projection_expression("tags, search_tags")
         .send()
         .await
@@ -226,8 +239,9 @@ async fn get_tag_indexes(
         .dynamodb
         .scan()
         .table_name(&*POST_TABLE_NAME)
-        .filter_expression("contains(search_tags, :encoded_tag)")
+        .filter_expression("contains(search_tags, :encoded_tag) AND (attribute_not_exists(publish) OR publish = :publish)")
         .expression_attribute_values(":encoded_tag", AttributeValue::S(encoded_tag))
+        .expression_attribute_values(":publish", AttributeValue::Bool(true))
         .projection_expression("slag, title, created_at, updated_at")
         .send()
         .await
@@ -269,10 +283,11 @@ async fn search_post(
             .dynamodb
             .scan()
             .table_name(&*POST_TABLE_NAME)
-            .filter_expression("contains(slag, :query) OR contains(search_title, :q) OR contains(search_tags, :q) OR contains(search_tags, :joined)")
+            .filter_expression("(contains(slag, :query) OR contains(search_title, :q) OR contains(search_tags, :q) OR contains(search_tags, :joined)) AND (attribute_not_exists(publish) OR publish = :publish)")
             .expression_attribute_values(":query", AttributeValue::S(query.clone()))
             .expression_attribute_values(":q", AttributeValue::S(q.to_string()))
             .expression_attribute_values(":joined", AttributeValue::S(queries.join("-")))
+            .expression_attribute_values(":publish", AttributeValue::Bool(true))
             .projection_expression("slag, title, created_at, updated_at")
             .send()
             .await

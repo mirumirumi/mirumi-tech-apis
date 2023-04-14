@@ -1,4 +1,5 @@
 use anyhow::{Error, Result};
+#[allow(unused_imports)]
 use axum::{
     body::Body as AxumBody,
     response::{Json, Result as AxumResult},
@@ -11,6 +12,7 @@ use http::{
     HeaderValue,
 };
 use image::{self, ImageFormat};
+#[allow(unused_imports)]
 use lambda_http::{
     http::Method,
     lambda_runtime::Context as LambdaContext,
@@ -28,6 +30,7 @@ use lambda_http::{
 };
 use regex::Regex;
 use std::{env, io::Cursor, str::FromStr};
+#[allow(unused_imports)]
 use tower_http::cors::{Cors, CorsLayer};
 use tracing::{info, Level};
 
@@ -78,6 +81,7 @@ pub fn init_app() -> CorsLayer
     //     .service(service_fn(f))
 }
 
+#[allow(dead_code)]
 pub fn log_incoming_event(request: &LambdaRequest, context: LambdaContext) {
     if let RequestContext::ApiGatewayV1(request_context) = request.request_context() {
         info!(

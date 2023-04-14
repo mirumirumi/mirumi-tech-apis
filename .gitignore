@@ -1,6 +1,7 @@
 samconfig.toml
 secret.py
 .aws-sam/
+root.crt
 
 
 # Created by https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode

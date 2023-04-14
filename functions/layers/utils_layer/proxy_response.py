@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, cast, Literal, Optional, TypedDict
+from typing import TypedDict
 
 import os
 import json
@@ -13,6 +13,7 @@ class ProxyResponse(TypedDict):
     headers: dict[str, str | None]
     body: str
 
+
 def s200(val: object = None) -> ProxyResponse:
     return {
         "statusCode": 200,
@@ -25,6 +26,7 @@ def s200(val: object = None) -> ProxyResponse:
         ),
     }
 
+
 def s400() -> ProxyResponse:
     return {
         "statusCode": 400,
@@ -34,6 +36,7 @@ def s400() -> ProxyResponse:
         "body": "required request data is missing or I/F schema is invalid",
     }
 
+
 def s403() -> ProxyResponse:
     return {
         "statusCode": 403,
@@ -42,6 +45,7 @@ def s403() -> ProxyResponse:
         },
         "body": "required api key is missing or invalid, alternatively, your referrer is not allowed",
     }
+
 
 def s500(val: object = None) -> ProxyResponse:
     return {

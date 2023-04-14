@@ -40,12 +40,6 @@ Resources:
     Properties:
       Name: !Sub ${ResourcePrefix}-${EnvironmentName}
       StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
-      Auth:
-        Authorizers:
-          KeyAuth:
-            FunctionArn: !GetAtt AuthorizerFunction.Arn
-            Identity:
-              ReauthorizeEvery: 0
       Cors:
         AllowOrigin: !Sub "'${ApiAllowOrigin}'"
         AllowHeaders: "'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token'"
@@ -91,34 +85,6 @@ Resources:
             Path: /{proxy+}
             Method: ANY
 
-  # InsertContentWebhookFunction:
-  #   Type: AWS::Serverless::Function
-  #   Metadata:
-  #     BuildMethod: rust-cargolambda
-  #     BuildProperties:
-  #       Binary: insert_content_webhook
-  #   Properties:
-  #     FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-insert-content-webhook
-  #     CodeUri: ../
-  #     Handler: bootstrap
-  #     Runtime: provided.al2
-  #     MemorySize: 512
-  #     Timeout: 90
-  #     Policies:
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref PostTable
-  #     Environment:
-  #       Variables:
-  #         POST_TABLE_NAME: !Ref PostTable
-  #     Events:
-  #       RestApis:
-  #         Type: Api
-  #         Properties:
-  #           RestApiId: !Ref RestApis
-  #           Path: /insert-content-webhook
-  #           Method: POST
-  #           Auth: 
-  #             Authorizer: KeyAuth
 
   PostTable:
     Type: AWS::DynamoDB::Table
