@@ -57,8 +57,6 @@ static ENV_NAME: Lazy<String> = Lazy::new(|| env::var("ENV_NAME").expect("\"ENV_
 static POST_TABLE_NAME: Lazy<String> = Lazy::new(|| env::var("POST_TABLE_NAME").expect("\"POST_TABLE_NAME\" env var is not set."));
 #[rustfmt::skip]
 static PAGE_ITEMS: Lazy<usize> = Lazy::new(|| 13);
-// #[rustfmt::skip]
-// static DB_ENDPOINT: Lazy<&str> = Lazy::new(|| "postgresql://main:rL0FlUoHOzm4LGCEdsJcpA@mirumi-tech-4368.6xw.cockroachlabs.cloud:26257/mirumi-tech-4368.{os.environ['ENV_NAME']}?sslmode=verify-full&sslrootcert=./root.crt");
 
 #[derive(Clone)]
 struct Sdk {
