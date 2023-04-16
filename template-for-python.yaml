@@ -65,6 +65,8 @@ Resources:
       MemorySize: 512
       Timeout: 90
       Layers:
+        - !Ref ImportModulesLayer
+        - !Ref UtilsLayer
         - !Ref InsertContentWebhookLayer
       Policies:
         - DynamoDBCrudPolicy:
