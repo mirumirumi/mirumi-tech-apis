@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, cast, Literal, TypedDict
+from typing import cast
 
 import os
 import re
@@ -7,6 +7,7 @@ import boto3
 import urllib.parse
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from distutils.util import strtobool
 
 JST = ZoneInfo("Asia/Tokyo")
 
@@ -24,12 +25,13 @@ class Post:
         self.updated_at = datetime.now(JST).isoformat()
         self.search_title = self.title.lower()
         self.search_tags = self.__gen_search_tags()
+        self.publish = self.__front_matter_publish(body)
 
     @staticmethod
     def __front_matter_title(body_md: str) -> str:
         lines = body_md.splitlines()
         for line in lines:
-            if (line.startswith("title")):
+            if line.startswith("title"):
                 return re.sub("title\s*:\s*(.*?)$", "\\1", line)  # https://regex101.com/r/4roRGw/1
         raise Exception("front matter of `title` was not found")
 
@@ -37,21 +39,24 @@ class Post:
     def __front_matter_tags(body_md: str) -> list[str]:
         lines = body_md.splitlines()
         for line in lines:
-            if (line.startswith("tags")):
-                return re.sub("tags\s*:\s*\[(.*?)\]$", "\\1", line) \
-                         .replace(", ", ",") \
-                         .split(",")  # https://regex101.com/r/5Z0OqH/1
+            if line.startswith("tags"):
+                return (
+                    re.sub("tags\s*:\s*\[(.*?)\]$", "\\1", line).replace(", ", ",").split(",")
+                )  # https://regex101.com/r/5Z0OqH/1
         raise Exception("front matter of `tags` was not found")
+
+    @staticmethod
+    def __front_matter_publish(body_md: str) -> bool:
+        lines = body_md.splitlines()
+        for line in lines:
+            if line.startswith("publish"):
+                return bool(strtobool(re.sub("publish\s*:\s*(.*?)$", "\\1", line)))  # https://regex101.com/r/4roRGw/1
+        return True
 
     def __gen_search_tags(self) -> list[str]:
         result: list[str] = list()
         for tag in self.tags:
-            result.append(
-                urllib.parse.quote( \
-                    tag.lower() \
-                       .replace(" ", "-").replace("/", "-").replace("#", "sharp") \
-                )
-            )
+            result.append(urllib.parse.quote(tag.lower().replace(" ", "-").replace("/", "-").replace("#", "sharp")))
         return result
 
     @staticmethod
@@ -67,25 +72,29 @@ class Post:
                 try:
                     while lines[i + j] == "":
                         j += 1
-                    return "\n".join(lines[i + j:])
+                    return "\n".join(lines[i + j :])
                 except IndexError:
                     raise Exception("content body was not found")
         raise Exception("front matter was not found")
 
     def is_already_exist(self) -> bool:
         try:
-            res = post_table.get_item(Key={
-                "slag": self.slag,
-            })
+            res = post_table.get_item(
+                Key={
+                    "slag": self.slag,
+                }
+            )
         except Exception as e:
             raise Exception(f"something went wrong: {e}")
         return "Item" in res
 
     def is_same_day_createdAt_and_updatedAt(self) -> bool:
         try:
-            res = post_table.get_item(Key={
-                "slag": self.slag,
-            })
+            res = post_table.get_item(
+                Key={
+                    "slag": self.slag,
+                }
+            )
         except Exception as e:
             raise Exception(f"something went wrong: {e}")
         created_day = datetime.fromisoformat(cast(str, res["Item"]["created_at"])).date()

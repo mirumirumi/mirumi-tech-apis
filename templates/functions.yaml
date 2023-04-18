@@ -12,22 +12,26 @@ Parameters:
     AllowedValues:
       - dev
       - prd
-  AllowedClientOrigin:
+  ApiAllowOrigin:
     Type: String
   UnHashedApiKey:
     Type: String
 
 
+Conditions:
+  IsPrd: !Equals [!Ref EnvironmentName, prd]
+
+
 Globals:
   Function:
-    MemorySize: 128  # default
-    Timeout: 13
-    Layers:
-      - !Ref ImportModulesLayer
-      - !Ref UtilsLayer
+    MemorySize: 128
+    Timeout: 30
     Environment:
       Variables:
-        ALLOWED_CLIENT_ORIGIN: !Ref AllowedClientOrigin
+        LOG_LEVEL: !If [IsPrd, INFO, DEBUG]
+        ENV_NAME: !Sub ${EnvironmentName}
+        RUST_BACKTRACE: 1
+        API_ALLOW_ORIGIN: !Sub ${ApiAllowOrigin}
 
 
 Resources:
@@ -36,39 +40,37 @@ Resources:
     Properties:
       Name: !Sub ${ResourcePrefix}-${EnvironmentName}
       StageName: !Sub ${ResourcePrefix}-${EnvironmentName}-apis
-      Auth:
-        Authorizers:
-          KeyAuth:
-            FunctionArn: !GetAtt AuthorizeKeyFunction.Arn
-            Identity:
-              ReauthorizeEvery: 0
       Cors:
-        AllowOrigin: !Sub "'${AllowedClientOrigin}'"
-        AllowHeaders: "'Content-Type, X-Amz-Date, X-Api-Key, Authorization, X-Amz-Security-Token'"
-        AllowMethods: "'GET, POST, PUT, DELETE, OPTIONS'"
+        AllowOrigin: !Sub "'${ApiAllowOrigin}'"
+        AllowHeaders: "'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token'"
+        AllowMethods: "'GET, POST, PUT, PATCH, DELETE, OPTIONS'"
 
-  AuthorizeKeyFunction:
+  AuthorizerFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: authorizer
     Properties:
-      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-authorize-key
-      CodeUri: ../functions/authorize_key
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
+      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-authorizer
+      CodeUri: ../
+      Handler: bootstrap
+      Runtime: provided.al2
       Environment:
         Variables:
           UNHASHED_KEY: !Ref UnHashedApiKey
 
-  GetTopIndexesFunction:
+  HandleApisFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: handle_apis
     Properties:
-      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-get-top-indexes
-      CodeUri: ../functions/get_top_indexes
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
+      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-handle-apis
+      CodeUri: ../
+      Handler: bootstrap
+      Runtime: provided.al2
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PostTable
@@ -80,135 +82,9 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref RestApis
-            Path: /get-top-indexes
-            Method: get
-            Auth: 
-              Authorizer: KeyAuth
-  GetTagIndexesFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-get-tag-indexes
-      CodeUri: ../functions/get_tag_indexes
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PostTable
-      Environment:
-        Variables:
-          POST_TABLE_NAME: !Ref PostTable
-      Events:
-        RestApis:
-          Type: Api
-          Properties:
-            RestApiId: !Ref RestApis
-            Path: /get-tag-indexes
-            Method: get
-            Auth: 
-              Authorizer: KeyAuth
-  GetAllTagsFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-get-all-tags
-      CodeUri: ../functions/get_all_tags
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PostTable
-      Environment:
-        Variables:
-          POST_TABLE_NAME: !Ref PostTable
-      Events:
-        RestApis:
-          Type: Api
-          Properties:
-            RestApiId: !Ref RestApis
-            Path: /get-all-tags
-            Method: get
-            Auth: 
-              Authorizer: KeyAuth
-  GetPostFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-get-post
-      CodeUri: ../functions/get_post
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PostTable
-      Environment:
-        Variables:
-          POST_TABLE_NAME: !Ref PostTable
-      Events:
-        RestApis:
-          Type: Api
-          Properties:
-            RestApiId: !Ref RestApis
-            Path: /get-post
-            Method: get
-            Auth: 
-              Authorizer: KeyAuth
-  SearchPostFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-search-post
-      CodeUri: ../functions/search_post
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PostTable
-      Environment:
-        Variables:
-          POST_TABLE_NAME: !Ref PostTable
-      Events:
-        RestApis:
-          Type: Api
-          Properties:
-            RestApiId: !Ref RestApis
-            Path: /search-post
-            Method: get
-            Auth: 
-              Authorizer: KeyAuth
+            Path: /{proxy+}
+            Method: ANY
 
-  InsertContentWebhookFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${ResourcePrefix}-${EnvironmentName}-insert-content-webhook
-      CodeUri: ../functions/insert_content_webhook
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
-      MemorySize: 512
-      Timeout: 90
-      Layers:
-        - !Ref InsertContentWebhookLayer
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PostTable
-      Environment:
-        Variables:
-          POST_TABLE_NAME: !Ref PostTable
-      Events:
-        RestApis:
-          Type: Api
-          Properties:
-            RestApiId: !Ref RestApis
-            Path: /insert-content-webhook
-            Method: post
-            Auth: 
-              Authorizer: KeyAuth
 
   PostTable:
     Type: AWS::DynamoDB::Table
@@ -221,40 +97,3 @@ Resources:
         - AttributeName: slag
           AttributeType: S
       BillingMode: PAY_PER_REQUEST 
-
-  ImportModulesLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      Description: import modules containing PowerTools
-      ContentUri: ../functions/layers/import_modules_layer
-      CompatibleRuntimes:
-        - python3.9
-    Metadata:
-      BuildMethod: python3.9
-  UtilsLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      Description: utils
-      ContentUri: ../functions/layers/utils_layer
-      CompatibleRuntimes:
-        - python3.9
-    Metadata:
-      BuildMethod: python3.9
-  InsertContentWebhookLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      Description: for insert-content-webhook
-      ContentUri: ../functions/layers/insert_content_webhook_layer
-      CompatibleRuntimes:
-        - python3.9
-    Metadata:
-      BuildMethod: python3.9
-
-
-# Outputs:
-#   RestApisDomain:
-#     Value: !Sub
-#       - ${Id}.execute-api.ap-northeast-1.amazonaws.com
-#       - Id: !Ref RestApis
-#   RestApisStageName:
-#     Value: !Sub ${ResourcePrefix}-${EnvironmentName}-apis

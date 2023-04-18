@@ -11,26 +11,69 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+
+      # Caution: This overrides the Python version!
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
       - uses: aws-actions/setup-sam@v2
 
-      - name: setup aws account
+      - name: Sign in to AWS
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: ap-northeast-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: decrypt gpg secret
+      - name: Decrypt secrets
         run: |
           echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "samconfig.toml" --decrypt "samconfig.toml.gpg"
           echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "functions/insert_content_webhook/secret.py" --decrypt "functions/insert_content_webhook/secret.py.gpg"
 
-      - run: sam build --use-container
+      - name: Install dependencies
+        run: |
+          pip3 install --upgrade pip
+          pip3 install cargo-lambda
 
-      - if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Build with cargo-lambda
+        run: |
+          yes | sam build \
+            --template-file ./template.yaml \
+            --beta-features
+
+      - name: Deploy Rust resources (dev)
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --config-env dev
 
-      - if: ${{ github.ref == 'refs/heads/release/prd' }}
+      - name: Deploy Rust resources (prd)
+        if: ${{ github.ref == 'refs/heads/release/prd' }}
         run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --config-env prd
+
+      - name: Build for Python
+        run: |
+          sam build \
+            --template-file ./template-for-python.yaml \
+            --config-file ./samconfig-for-python.toml \
+            --use-container
+
+      - name: Deploy Python resources (dev)
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          sam deploy \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --config-file ./samconfig-for-python.toml \
+            --config-env dev
+
+      - name: Deploy Python resources (prd)
+        if: ${{ github.ref == 'refs/heads/release/prd' }}
+        run: |
+          sam deploy \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --config-file ./samconfig-for-python.toml \
+            --config-env prd

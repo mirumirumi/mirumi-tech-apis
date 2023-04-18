@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: backend for mirumi.tech
+Description: back-end for mirumi.tech
 
 
 Parameters:
@@ -12,7 +12,7 @@ Parameters:
     AllowedValues:
       - dev
       - prd
-  AllowedClientOrigin:
+  ApiAllowOrigin:
     Type: String
   UnHashedApiKey:
     Type: String
@@ -26,7 +26,7 @@ Resources:
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         EnvironmentName: !Ref EnvironmentName
-        AllowedClientOrigin: !Ref AllowedClientOrigin
+        ApiAllowOrigin: !Ref ApiAllowOrigin
         UnHashedApiKey: !Ref UnHashedApiKey
 
   BffStack:
@@ -36,5 +36,3 @@ Resources:
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         EnvironmentName: !Ref EnvironmentName
-        # RestApisDomain: !GetAtt FunctionsStack.Outputs.RestApisDomain
-        # RestApisStageName: !GetAtt FunctionsStack.Outputs.RestApisStageName
