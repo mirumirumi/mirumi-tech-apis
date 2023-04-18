@@ -330,3 +330,115 @@ fn slice_posts<T: std::clone::Clone>(posts: Vec<T>, page: usize, count: usize) -
     }
 }
 
+#[cfg(test)]
+mod tests {
+    // cargo test -- --nocapture
+
+    use super::*;
+
+    #[test]
+    fn test_sort_by_created_at() {
+        let mut items: Vec<HashMap<String, AttributeValue>> = vec![
+            [
+                ("id".to_string(), AttributeValue::S("aaa".to_string())),
+                (
+                    "created_at".to_string(),
+                    AttributeValue::S("2024-09-04T18:45:09.865145+09:00".to_string()),
+                ),
+            ]
+            .iter()
+            .cloned()
+            .collect::<HashMap<String, AttributeValue>>(),
+            [
+                ("id".to_string(), AttributeValue::S("bbb".to_string())),
+                (
+                    "created_at".to_string(),
+                    AttributeValue::S("2022-09-04T18:45:09.865145+09:00".to_string()),
+                ),
+            ]
+            .iter()
+            .cloned()
+            .collect::<HashMap<String, AttributeValue>>(),
+            [
+                ("id".to_string(), AttributeValue::S("ccc".to_string())),
+                (
+                    "created_at".to_string(),
+                    AttributeValue::S("2023-09-04T18:45:09.865145+09:00".to_string()),
+                ),
+            ]
+            .iter()
+            .cloned()
+            .collect::<HashMap<String, AttributeValue>>(),
+        ];
+
+        let exptected = vec![
+            [
+                ("id".to_string(), AttributeValue::S("aaa".to_string())),
+                (
+                    "created_at".to_string(),
+                    AttributeValue::S("2024-09-04T18:45:09.865145+09:00".to_string()),
+                ),
+            ]
+            .iter()
+            .cloned()
+            .collect::<HashMap<String, AttributeValue>>(),
+            [
+                ("id".to_string(), AttributeValue::S("ccc".to_string())),
+                (
+                    "created_at".to_string(),
+                    AttributeValue::S("2023-09-04T18:45:09.865145+09:00".to_string()),
+                ),
+            ]
+            .iter()
+            .cloned()
+            .collect::<HashMap<String, AttributeValue>>(),
+            [
+                ("id".to_string(), AttributeValue::S("bbb".to_string())),
+                (
+                    "created_at".to_string(),
+                    AttributeValue::S("2022-09-04T18:45:09.865145+09:00".to_string()),
+                ),
+            ]
+            .iter()
+            .cloned()
+            .collect::<HashMap<String, AttributeValue>>(),
+        ];
+
+        sort_by_created_at(&mut items);
+
+        assert_eq!(items, exptected);
+    }
+
+    #[test]
+    fn test_slice_posts_page_latest() {
+        let posts = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        assert_eq!(
+            slice_posts(posts.clone(), 1, posts.len()),
+            vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        );
+
+        let posts = vec![1, 2, 3, 4, 5];
+        assert_eq!(
+            slice_posts(posts.clone(), 1, posts.len()),
+            vec![1, 2, 3, 4, 5]
+        );
+    }
+
+    #[test]
+    fn test_slice_posts_page_middle() {
+        let posts: Vec<i32> = (1..=100).collect();
+        assert_eq!(
+            slice_posts(posts.clone(), 3, posts.len()),
+            vec![27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+        );
+    }
+
+    #[test]
+    fn test_slice_posts_page_oldest() {
+        let posts: Vec<i32> = (1..=100).collect();
+        assert_eq!(
+            slice_posts(posts.clone(), 8, posts.len()),
+            vec![92, 93, 94, 95, 96, 97, 98, 99, 100]
+        );
+    }
+}
