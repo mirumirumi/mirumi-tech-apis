@@ -1,10 +1,11 @@
+use std::collections::HashMap;
+
 use aws_sdk_dynamodb::types::AttributeValue;
 use serde::{
     ser::{SerializeMap, Serializer},
     Serialize,
 };
 use serde_json::json;
-use std::collections::HashMap;
 
 pub struct AttributeValueItem(pub HashMap<String, AttributeValue>);
 

@@ -1,9 +1,10 @@
+use std::env;
+
 use anyhow::{Error, Ok, Result};
 use lambda_runtime::{service_fn, LambdaEvent};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::env;
 
 #[rustfmt::skip]
 static UNHASHED_KEY: Lazy<String> = Lazy::new(|| env::var("UNHASHED_KEY").expect("\"UNHASHED_KEY\" env var is not set."));

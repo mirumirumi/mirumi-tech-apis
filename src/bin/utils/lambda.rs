@@ -1,3 +1,5 @@
+use std::{env, future::Future, io::Cursor, str::FromStr};
+
 use anyhow::{Error, Result};
 use base64::{self, engine::general_purpose, Engine};
 use http::{
@@ -6,12 +8,19 @@ use http::{
 };
 use image::{self, ImageFormat};
 use lambda_http::{
-    http::Method, lambda_runtime::Context as LambdaContext, request::RequestContext, service_fn,
-    tower::util::ServiceFn, Body as LambdaBody, Error as LambdaError, Request as LambdaRequest,
-    Request, RequestExt, Response as LambdaResponse,
+    http::Method,
+    lambda_runtime::Context as LambdaContext,
+    request::RequestContext,
+    service_fn,
+    tower::util::ServiceFn,
+    Body as LambdaBody,
+    Error as LambdaError,
+    Request as LambdaRequest,
+    Request,
+    RequestExt,
+    Response as LambdaResponse,
 };
 use regex::Regex;
-use std::{env, future::Future, io::Cursor, str::FromStr};
 use tower_http::cors::{Cors, CorsLayer};
 use tracing::{info, Level};
 

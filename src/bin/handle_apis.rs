@@ -1,3 +1,5 @@
+use std::{collections::HashMap, env};
+
 use anyhow::Result;
 use aws_sdk_dynamodb::types::AttributeValue;
 use lambda_http::{http::Method, run, Body, Error as LambdaError, Request, RequestExt, Response};
@@ -5,7 +7,6 @@ use once_cell::sync::Lazy;
 use percent_encoding::{utf8_percent_encode, CONTROLS};
 use serde::Serialize;
 use serde_json::json;
-use std::{collections::HashMap, env};
 
 mod utils {
     pub mod dynamodb;
