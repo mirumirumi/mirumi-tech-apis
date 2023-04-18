@@ -1,7 +1,6 @@
 use anyhow::Result;
 use lambda_http::{Body, Error, Response};
 
-#[allow(dead_code)]
 fn base_response_builder() -> http::response::Builder {
     Response::builder().header("Content-Type", "application/json")
 }
@@ -18,7 +17,7 @@ pub fn _201(body: impl Into<Body>) -> Result<Response<Body>, Error> {
 // and for precise error handling, it is necessary to obtain structured data from the response content,
 // there is room to consider dropping the msg portion altogether.
 
-pub fn _400(msg: &str) -> Result<Response<Body>, Error> {
+pub fn _400(msg: impl Into<String> + std::fmt::Display) -> Result<Response<Body>, Error> {
     // Invalid Request
 
     Ok(base_response_builder()
@@ -26,7 +25,7 @@ pub fn _400(msg: &str) -> Result<Response<Body>, Error> {
         .body(format!("Invalid Request: {}", msg).into())?)
 }
 
-pub fn _401(msg: &str) -> Result<Response<Body>, Error> {
+pub fn _401(msg: impl Into<String> + std::fmt::Display) -> Result<Response<Body>, Error> {
     // Unauthorized
 
     Ok(base_response_builder()
@@ -34,7 +33,7 @@ pub fn _401(msg: &str) -> Result<Response<Body>, Error> {
         .body(format!("Unauthorized: {}", msg).into())?)
 }
 
-pub fn _403(msg: &str) -> Result<Response<Body>, Error> {
+pub fn _403(msg: impl Into<String> + std::fmt::Display) -> Result<Response<Body>, Error> {
     // Forbidden
 
     Ok(base_response_builder()
@@ -42,7 +41,7 @@ pub fn _403(msg: &str) -> Result<Response<Body>, Error> {
         .body(format!("Forbidden: {}", msg).into())?)
 }
 
-pub fn _404(msg: &str) -> Result<Response<Body>, Error> {
+pub fn _404(msg: impl Into<String> + std::fmt::Display) -> Result<Response<Body>, Error> {
     // Not Found
 
     Ok(base_response_builder()

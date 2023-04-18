@@ -1,17 +1,12 @@
 use anyhow::Result;
 use aws_sdk_dynamodb::types::AttributeValue;
-use axum::{
-    extract::{Extension, Query},
-    response::{IntoResponse, Json},
-    routing::get,
-    Router,
-};
-use lambda_http::{run, tower::ServiceBuilder, Error as LambdaError};
+use lambda_http::{http::Method, run, Body, Error as LambdaError, Request, RequestExt, Response};
 use once_cell::sync::Lazy;
 use percent_encoding::{utf8_percent_encode, CONTROLS};
 use serde::Serialize;
 use serde_json::json;
-use std::{collections::HashMap, env, sync::Arc};
+use std::{collections::HashMap, env};
+use tracing::error;
 
 mod utils {
     pub mod dynamodb;
@@ -22,10 +17,9 @@ mod utils {
 use utils::{
     dynamodb::{AttributeValueItem, ListToVec},
     lambda,
+    responses::*,
 };
 
-#[rustfmt::skip]
-static ENV_NAME: Lazy<String> = Lazy::new(|| env::var("ENV_NAME").expect("\"ENV_NAME\" env var is not set."));
 #[rustfmt::skip]
 static POST_TABLE_NAME: Lazy<String> = Lazy::new(|| env::var("POST_TABLE_NAME").expect("\"POST_TABLE_NAME\" env var is not set."));
 static PAGE_ITEMS: Lazy<usize> = Lazy::new(|| 13);
@@ -37,52 +31,82 @@ struct Sdk {
 
 #[tokio::main]
 async fn main() -> Result<(), LambdaError> {
-    // `log_incoming_event()` is not working now.
-
     let config = aws_config::load_from_env().await;
     let dynamodb = aws_sdk_dynamodb::Client::new(&config);
 
     let sdk = Sdk { dynamodb };
 
-    let router = Router::new()
-        .nest(
-            format!("/mirumitech-{}-apis", &*ENV_NAME).as_str(),
-            Router::new()
-                .route("/get-top-indexes", get(get_top_indexes))
-                .route("/get-post", get(get_post))
-                .route("/get-all-tags", get(get_all_tags))
-                .route("/get-tag-indexes", get(get_tag_indexes))
-                .route("/search-post", get(search_post)),
-        )
-        .layer(
-            ServiceBuilder::new()
-                .layer(Extension(Arc::new(sdk)))
-                .layer(lambda::init_app()),
-        );
-
-    run(router).await
+    run(lambda::init_app(|request| {
+        lambda_handler(request, sdk.clone())
+    }))
+    .await
 }
 
-async fn get_top_indexes(
-    Extension(sdk): Extension<Arc<Sdk>>,
-    Query(query_params): Query<HashMap<String, String>>,
-) -> impl IntoResponse {
-    let page = query_params.get("page").unwrap();
+async fn lambda_handler(request: Request, sdk: Sdk) -> Result<Response<Body>, LambdaError> {
+    let context = request.lambda_context();
+    lambda::log_incoming_event(&request, context);
+
+    let fullpath = request.uri().path();
+    let path = &fullpath[fullpath
+        .rfind("/")
+        .expect("The requested URL does not include `/`.")..];
+    let method = request.method();
+
+
+    let result = match path {
+        "/get-top-indexes" => match method {
+            &Method::GET => get_top_indexes(&request, sdk).await,
+            _ => _404(format!("No method found for `{}` path.", path)),
+        },
+        "/get-post" => match method {
+            &Method::GET => get_post(&request, sdk).await,
+            _ => _404(format!("No method found for `{}` path.", path)),
+        },
+        "/get-all-tags" => match method {
+            &Method::GET => get_all_tags(&request, sdk).await,
+            _ => _404(format!("No method found for `{}` path.", path)),
+        },
+        "/get-tag-indexes" => match method {
+            &Method::GET => get_tag_indexes(&request, sdk).await,
+            _ => _404(format!("No method found for `{}` path.", path)),
+        },
+        "/search-post" => match method {
+            &Method::GET => search_post(&request, sdk).await,
+            _ => _404(format!("No method found for `{}` path.", path)),
+        },
+        _ => _404("No API endpoint path found."),
+    };
+
+    match result {
+        Ok(_) => result,
+        Err(err) => {
+            error!(err);
+            // _500()
+            panic!("")
+        }
+    }
+}
+
+async fn get_top_indexes(request: &Request, sdk: Sdk) -> Result<Response<Body>, LambdaError> {
+    let query_params = request.query_string_parameters();
+    let page = match query_params.first("page") {
+        Some(page) => page,
+        None => return _400("`page` query param is not found."),
+    };
 
     let res = sdk
         .dynamodb
         .scan()
         .table_name(&*POST_TABLE_NAME)
-        // 記事一覧および全記事一覧にリンクが存在していなければ generate もされないので get-post で単独の対応は不要
+        // If the link does not exist in the `/` and the `/all-entries`,
+        // it will not be generated, so there is no need to use get-post alone.
         .filter_expression("attribute_not_exists(publish) OR publish = :publish")
         .expression_attribute_values(":publish", AttributeValue::Bool(true))
         .projection_expression("slag, title, created_at, updated_at")
         .send()
-        .await
-        .unwrap();
+        .await?;
 
     let mut items: Vec<HashMap<String, AttributeValue>> = res.items().unwrap().to_vec();
-
     let count = items.len();
 
     sort_by_created_at(&mut items);
@@ -99,20 +123,23 @@ async fn get_top_indexes(
         result = slice_posts(result, page, count);
     }
 
-    Json(json!({
+    let result = json!({
         "items": result
                 .iter()
                 .map(|item| serde_json::to_value(AttributeValueItem(item.clone())).unwrap())
                 .collect::<Vec<serde_json::Value>>(),
         "count": count,
-    }))
+    })
+    .to_string();
+    _200(result)
 }
 
-async fn get_post(
-    Extension(sdk): Extension<Arc<Sdk>>,
-    Query(query_params): Query<HashMap<String, String>>,
-) -> impl IntoResponse {
-    let slag = query_params.get("slag").unwrap();
+async fn get_post(request: &Request, sdk: Sdk) -> Result<Response<Body>, LambdaError> {
+    let query_params = request.query_string_parameters();
+    let slag = match query_params.first("slag") {
+        Some(slag) => slag,
+        None => return _400("`slag` query param is not found."),
+    };
 
     let res = sdk
         .dynamodb
@@ -120,15 +147,13 @@ async fn get_post(
         .table_name(&*POST_TABLE_NAME)
         .key("slag", AttributeValue::S(slag.to_string()))
         .send()
-        .await
-        .unwrap();
+        .await?;
 
     let item = res.item().unwrap();
 
-    Json(json!(serde_json::to_value(AttributeValueItem(
-        item.to_owned()
-    ))
-    .unwrap()))
+    let result =
+        json!(serde_json::to_value(AttributeValueItem(item.to_owned())).unwrap()).to_string();
+    _200(result)
 }
 
 #[derive(Clone)]
@@ -149,7 +174,7 @@ impl SearchResult {
     }
 }
 
-async fn get_all_tags(Extension(sdk): Extension<Arc<Sdk>>) -> impl IntoResponse {
+async fn get_all_tags(_request: &Request, sdk: Sdk) -> Result<Response<Body>, LambdaError> {
     let res = sdk
         .dynamodb
         .scan()
@@ -158,8 +183,7 @@ async fn get_all_tags(Extension(sdk): Extension<Arc<Sdk>>) -> impl IntoResponse 
         .expression_attribute_values(":publish", AttributeValue::Bool(true))
         .projection_expression("tags, search_tags")
         .send()
-        .await
-        .unwrap();
+        .await?;
 
     let posts: Vec<TableTagData> = res
         .items()
@@ -187,15 +211,21 @@ async fn get_all_tags(Extension(sdk): Extension<Arc<Sdk>>) -> impl IntoResponse 
 
     result.sort_unstable_by(|a, b| a.tag.cmp(&b.tag));
 
-    Json(json!(result))
+    let result = json!(result).to_string();
+    _200(result)
 }
 
-async fn get_tag_indexes(
-    Extension(sdk): Extension<Arc<Sdk>>,
-    Query(query_params): Query<HashMap<String, String>>,
-) -> impl IntoResponse {
-    let page = query_params.get("page").unwrap();
-    let tag = query_params.get("tag").unwrap(); // No encoded (link string, not title)
+async fn get_tag_indexes(request: &Request, sdk: Sdk) -> Result<Response<Body>, LambdaError> {
+    let query_params = request.query_string_parameters();
+    let page = match query_params.first("page") {
+        Some(page) => page,
+        None => return _400("`page` query param is not found."),
+    };
+    let tag = match query_params.first("tag") {
+        // No encoded (link string, not title)
+        Some(tag) => tag,
+        None => return _400("`tag` query param is not found."),
+    };
 
     let encoded_tag = utf8_percent_encode(tag, CONTROLS).to_string();
 
@@ -208,8 +238,7 @@ async fn get_tag_indexes(
         .expression_attribute_values(":publish", AttributeValue::Bool(true))
         .projection_expression("slag, title, created_at, updated_at")
         .send()
-        .await
-        .unwrap();
+        .await?;
 
     let mut items = res.items().unwrap().to_vec();
     let count = items.len();
@@ -224,20 +253,23 @@ async fn get_tag_indexes(
 
     result = slice_posts(result, page, count);
 
-    Json(json!({
+    let result = json!({
         "items": result
                 .iter()
                 .map(|item| serde_json::to_value(AttributeValueItem(item.clone())).unwrap())
                 .collect::<Vec<serde_json::Value>>(),
         "count": count,
-    }))
+    })
+    .to_string();
+    _200(result)
 }
 
-async fn search_post(
-    Extension(sdk): Extension<Arc<Sdk>>,
-    Query(query_params): Query<HashMap<String, String>>,
-) -> impl IntoResponse {
-    let query = query_params.get("query").unwrap().to_lowercase();
+async fn search_post(request: &Request, sdk: Sdk) -> Result<Response<Body>, LambdaError> {
+    let query_params = request.query_string_parameters();
+    let query = match query_params.first("query") {
+        Some(query) => query.to_lowercase(),
+        None => return _400("`query` query param is not found."),
+    };
 
     let queries: Vec<&str> = query.split_whitespace().collect();
     let mut candidates: Vec<_> = vec![];
@@ -254,8 +286,7 @@ async fn search_post(
             .expression_attribute_values(":publish", AttributeValue::Bool(true))
             .projection_expression("slag, title, created_at, updated_at")
             .send()
-            .await
-            .unwrap();
+            .await?;
 
         let items = res.items().unwrap().to_vec();
 
@@ -271,10 +302,12 @@ async fn search_post(
         }
     }
 
-    Json(json!(candidates
+    let result = json!(candidates
         .iter()
         .map(|item| serde_json::to_value(AttributeValueItem(item.clone())).unwrap())
-        .collect::<Vec<serde_json::Value>>()))
+        .collect::<Vec<serde_json::Value>>())
+    .to_string();
+    _200(result)
 }
 
 fn sort_by_created_at(items: &mut Vec<HashMap<String, AttributeValue>>) {
@@ -287,71 +320,13 @@ fn sort_by_created_at(items: &mut Vec<HashMap<String, AttributeValue>>) {
 
 fn slice_posts<T: std::clone::Clone>(posts: Vec<T>, page: usize, count: usize) -> Vec<T> {
     let collect_page_num = count / &*PAGE_ITEMS;
-    let remainder_page_num = count % &*PAGE_ITEMS;
 
     if page <= collect_page_num {
         let start = (page - 1) * (&*PAGE_ITEMS);
         let end = (page) * (&*PAGE_ITEMS);
         posts[start..end].to_vec()
     } else {
-        posts[..remainder_page_num].to_vec()
+        posts[(&*PAGE_ITEMS * collect_page_num)..].to_vec()
     }
 }
 
-// struct LogLayer<S> {
-//     log_service: S,
-// }
-
-// impl<S> LogLayer<S> {
-//     fn new(log_service: S) -> Self {
-//         Self { log_service }
-//     }
-// }
-
-// impl<S, Inner> Layer<Inner> for LogLayer<S>
-// where
-//     S: Service<LambdaRequest, Response = http::Response<()>, Error = Infallible> + Clone,
-//     Inner: Service<HttpRequest<Body>>,
-// {
-//     type Service = LogService<S, Inner, Inner::Response, Inner::Error>;
-
-//     fn layer(&self, inner: Inner) -> Self::Service {
-//         LogService {
-//             log_service: self.log_service.clone(),
-//             inner,
-//             _marker: PhantomData,
-//         }
-//     }
-// }
-
-// use futures::{future::BoxFuture, Future};
-// use std::marker::PhantomData;
-// use std::pin::Pin;
-// use std::task::{Context, Poll};
-
-// pub struct LogService<S, Inner> {
-//     log_service: S,
-//     inner: Inner,
-//     _phantom: PhantomData<fn() -> (S::Request, Inner::Request)>,
-// }
-
-// impl<S, Inner> Service<HttpRequest<Body>> for LogService<S, Inner>
-// where
-//     S: Service<HttpRequest<Body>, Response = (), Error = Infallible> + Clone,
-//     Inner: Service<HttpRequest<Body>> + Clone,
-// {
-//     type Response = Inner::Response;
-//     type Error = Inner::Error;
-//     type Future = Inner::Future;
-
-//     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-//         self.inner.poll_ready(cx)
-//     }
-
-//     fn call(&mut self, request: HttpRequest<Body>) -> Self::Future {
-//         let context = request.lambda_context();
-//         lambda::log_incoming_event(&request, context);
-
-//         self.inner.call(request)
-//     }
-// }

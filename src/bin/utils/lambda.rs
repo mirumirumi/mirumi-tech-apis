@@ -6,19 +6,19 @@ use http::{
 };
 use image::{self, ImageFormat};
 use lambda_http::{
-    http::Method, lambda_runtime::Context as LambdaContext, request::RequestContext,
-    Request as LambdaRequest, RequestExt,
+    http::Method, lambda_runtime::Context as LambdaContext, request::RequestContext, service_fn,
+    tower::util::ServiceFn, Body as LambdaBody, Error as LambdaError, Request as LambdaRequest,
+    Request, RequestExt, Response as LambdaResponse,
 };
 use regex::Regex;
-use std::{env, io::Cursor, str::FromStr};
-use tower_http::cors::CorsLayer;
+use std::{env, future::Future, io::Cursor, str::FromStr};
+use tower_http::cors::{Cors, CorsLayer};
 use tracing::{info, Level};
 
-pub fn init_app() -> CorsLayer
-// Cors<ServiceFn<F>>
-// ServiceBuilder<Stack<LayerFn<F>, Stack<CorsLayer, Identity>>>
-// where
-//     F: Fn(LambdaRequest) -> () + Clone + Send + Sync + 'static,
+pub fn init_app<H, F>(lambda_handler: H) -> Cors<ServiceFn<H>>
+where
+    H: Fn(Request) -> F,
+    F: Future<Output = Result<LambdaResponse<LambdaBody>, LambdaError>>,
 {
     let level = env::var("LOG_LEVEL").unwrap_or_else(|_| "debug".to_string());
     let level = Level::from_str(&level).unwrap();
@@ -54,14 +54,11 @@ pub fn init_app() -> CorsLayer
             Method::OPTIONS,
         ]);
 
-    cors_layer
-    // ServiceBuilder::new()
-    //     .layer(cors_layer)
-    //     // .layer_fn(f)
-    //     .service(service_fn(f))
+    lambda_http::tower::ServiceBuilder::new()
+        .layer(cors_layer)
+        .service(service_fn(lambda_handler))
 }
 
-#[allow(dead_code)]
 pub fn log_incoming_event(request: &LambdaRequest, context: LambdaContext) {
     if let RequestContext::ApiGatewayV1(request_context) = request.request_context() {
         info!(
