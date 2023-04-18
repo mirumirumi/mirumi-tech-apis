@@ -6,7 +6,6 @@ use percent_encoding::{utf8_percent_encode, CONTROLS};
 use serde::Serialize;
 use serde_json::json;
 use std::{collections::HashMap, env};
-use tracing::error;
 
 mod utils {
     pub mod dynamodb;
@@ -52,8 +51,7 @@ async fn lambda_handler(request: Request, sdk: Sdk) -> Result<Response<Body>, La
         .expect("The requested URL does not include `/`.")..];
     let method = request.method();
 
-
-    let result = match path {
+    match path {
         "/get-top-indexes" => match method {
             &Method::GET => get_top_indexes(&request, sdk).await,
             _ => _404(format!("No method found for `{}` path.", path)),
@@ -75,15 +73,6 @@ async fn lambda_handler(request: Request, sdk: Sdk) -> Result<Response<Body>, La
             _ => _404(format!("No method found for `{}` path.", path)),
         },
         _ => _404("No API endpoint path found."),
-    };
-
-    match result {
-        Ok(_) => result,
-        Err(err) => {
-            error!(err);
-            // _500()
-            panic!("")
-        }
     }
 }
 
