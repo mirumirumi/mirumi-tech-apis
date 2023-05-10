@@ -43,7 +43,7 @@ async fn lambda_handler(event: LambdaEvent<Request>) -> Result<PolicyStatement, 
     println!("{:?}", payload);
 
     let mut hasher = Sha256::new();
-    hasher.update(&*UNHASHED_KEY.as_bytes());
+    hasher.update(UNHASHED_KEY.as_bytes());
     let hash = hasher.finalize();
 
     if payload.authorization_token == hex::encode(hash) {

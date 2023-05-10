@@ -20,7 +20,7 @@ impl AttributeValueItem {
             AttributeValue::Ns(ns) => json!(ns),
             AttributeValue::L(l) => json!(l
                 .iter()
-                .map(|item| Self::serialize_attribute_value(item))
+                .map(Self::serialize_attribute_value)
                 .collect::<Vec<_>>()),
             _ => unimplemented!("No serializer for DynamoDB AttributeValue."),
         }
@@ -51,7 +51,7 @@ impl ListToVec<String> for AttributeValueItem {
     fn list_to_vec(&self, key: &str) -> Vec<String> {
         if let AttributeValue::L(items) = self.0.get(key).unwrap() {
             items
-                .into_iter()
+                .iter()
                 .map(|item| item.as_s().unwrap().clone())
                 .collect::<Vec<String>>()
         } else {
@@ -64,7 +64,7 @@ impl ListToVec<i64> for AttributeValueItem {
     fn list_to_vec(&self, key: &str) -> Vec<i64> {
         if let AttributeValue::L(items) = self.0.get(key).unwrap() {
             items
-                .into_iter()
+                .iter()
                 .map(|item| item.as_n().unwrap().parse::<i64>().unwrap())
                 .collect::<Vec<i64>>()
         } else {
@@ -77,8 +77,8 @@ impl ListToVec<bool> for AttributeValueItem {
     fn list_to_vec(&self, key: &str) -> Vec<bool> {
         if let AttributeValue::L(items) = self.0.get(key).unwrap() {
             items
-                .into_iter()
-                .map(|item| item.as_bool().unwrap().clone())
+                .iter()
+                .map(|item| *item.as_bool().unwrap())
                 .collect::<Vec<bool>>()
         } else {
             panic!("`list_to_vec` function is not implemented for any type other than `AttributeValue::L` type.")

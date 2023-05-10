@@ -48,7 +48,7 @@ async fn lambda_handler(request: Request, sdk: Sdk) -> Result<Response<Body>, La
 
     let fullpath = request.uri().path();
     let path = &fullpath[fullpath
-        .rfind("/")
+        .rfind('/')
         .expect("The requested URL does not include `/`.")..];
     let method = request.method();
 
@@ -178,7 +178,7 @@ async fn get_all_tags(_request: &Request, sdk: Sdk) -> Result<Response<Body>, La
     let posts: Vec<TableTagData> = res
         .items()
         .unwrap()
-        .into_iter()
+        .iter()
         .map(|item| {
             let tags = AttributeValueItem(item.clone()).list_to_vec("tags");
             let search_tags = AttributeValueItem(item.clone()).list_to_vec("search_tags");
@@ -190,7 +190,7 @@ async fn get_all_tags(_request: &Request, sdk: Sdk) -> Result<Response<Body>, La
 
     for post in posts {
         for (i, tag) in post.tags.iter().enumerate() {
-            if !SearchResult::exists_tag(&result, &tag) {
+            if !SearchResult::exists_tag(&result, tag) {
                 result.push(SearchResult {
                     tag: tag.to_string(),
                     search_tag: post.search_tags[i].clone(),
@@ -284,10 +284,9 @@ async fn search_post(request: &Request, sdk: Sdk) -> Result<Response<Body>, Lamb
             candidates = items;
         } else {
             for item in items {
-                candidates = candidates
-                    .into_iter()
-                    .filter(|candidate| candidate.get("slag").unwrap() != item.get("slag").unwrap())
-                    .collect();
+                candidates.retain(|candidate| {
+                    candidate.get("slag").unwrap() != item.get("slag").unwrap()
+                });
             }
         }
     }
@@ -300,7 +299,7 @@ async fn search_post(request: &Request, sdk: Sdk) -> Result<Response<Body>, Lamb
     _200(result)
 }
 
-fn sort_by_created_at(items: &mut Vec<HashMap<String, AttributeValue>>) {
+fn sort_by_created_at(items: &mut [HashMap<String, AttributeValue>]) {
     items.sort_unstable_by(|a, b| {
         let a_created_at = a.get("created_at").unwrap().as_s().unwrap();
         let b_created_at = b.get("created_at").unwrap().as_s().unwrap();
@@ -309,14 +308,14 @@ fn sort_by_created_at(items: &mut Vec<HashMap<String, AttributeValue>>) {
 }
 
 fn slice_posts<T: std::clone::Clone>(posts: Vec<T>, page: usize, count: usize) -> Vec<T> {
-    let collect_page_num = count / &*PAGE_ITEMS;
+    let collect_page_num = count / *PAGE_ITEMS;
 
     if page <= collect_page_num {
-        let start = (page - 1) * (&*PAGE_ITEMS);
-        let end = (page) * (&*PAGE_ITEMS);
+        let start = (page - 1) * (*PAGE_ITEMS);
+        let end = (page) * (*PAGE_ITEMS);
         posts[start..end].to_vec()
     } else {
-        posts[(&*PAGE_ITEMS * collect_page_num)..].to_vec()
+        posts[(*PAGE_ITEMS * collect_page_num)..].to_vec()
     }
 }
 
