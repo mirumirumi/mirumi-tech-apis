@@ -127,8 +127,8 @@ pub fn log_incoming_event(request: &LambdaRequest, context: LambdaContext) {
 #[derive(PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum Extension {
-    JPG,
-    PNG,
+    Jpg,
+    Png,
 }
 
 #[allow(dead_code)]
@@ -169,8 +169,8 @@ pub fn save_image_in_temp(
         "/tmp/{}.{}",
         file_name,
         match want_ext {
-            Extension::JPG => "jpg",
-            Extension::PNG => "png",
+            Extension::Jpg => "jpg",
+            Extension::Png => "png",
         }
     );
 
