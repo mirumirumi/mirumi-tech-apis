@@ -1,3 +1,6 @@
 requests
 markdown2
 opengraph_py3
+
+# https://github.com/psf/requests/issues/6443
+urllib3<2
