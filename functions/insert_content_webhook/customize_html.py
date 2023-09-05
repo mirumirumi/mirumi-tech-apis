@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import cast
 
 import re
 import urllib.parse
@@ -105,9 +104,9 @@ def convert_to_blogcard(html: str) -> str:
 
 def convert_to_common_box(html: str) -> str:
     boxes = re.findall(
-        "(<p>:::(info|alert|rewrite\s*\d+\/\d+\/\d+)\n*((.*?)<\/p>\n*(\s*<.*?\n*)*?(<p>)?)?(.*?)\n*:::<\/p>)",  # https://regex101.com/r/GSr3Oz/1
-        html
-        # invalid `</p>` tag remains in pattern with blog card at the end with this regexp, confirmed no particular problems
+        # https://regex101.com/r/YvFeqP/1
+        "(<p>:::(info|alert|rewrite\s*\d+\/\d+\/\d+)<\/p>\n*(( *<\/?[a-zA-Z]+\s*.*?>\n*?(.*?(<\/[a-zA-Z]+>)?)?\n)+)<p>:::<\/p>)",
+        html,
     )
     replace_to = ""
 
@@ -119,7 +118,7 @@ def convert_to_common_box(html: str) -> str:
         elif "rewrite" in box[1]:
             replace_to = '<div class="box-common box-rewrite ' + re.sub("rewrite\s*(\d+\/\d+\/\d+)", "\\1", box[1]) + '">'
 
-        html = html.replace(box[0], replace_to + "<p>" + box[2] + box[6] + "</p></div>")
+        html = html.replace(box[0], replace_to + box[2] + "</div>")
 
     return html
 
