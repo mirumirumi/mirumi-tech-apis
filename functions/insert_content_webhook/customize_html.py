@@ -17,7 +17,16 @@ def customize_html(html: str) -> str:
     html = convert_to_blogcard(html)
 
     # convert `:::info/alert/rewrite` -> common box
-    html = convert_to_common_box(html)
+
+    #################################################
+    # ボックスの置換の何かを改善したくて（何か仕組みを変えたような気がする）下記の diff の変更を行った。
+    # 正規表現確認ツールでは問題なく動作したが、本番の実行環境では catastrophic backtracking になっているらしく、
+    # 無限ループにハマって死ぬ。もはや直す気が起きず、無効化しておくので直接タグで書いてください。
+    # ちなみに期待されるマークダウン状態はこのコメント文を記入するまでの日付以前で更新された記事がその正しい状態のはず。
+    # https://github.com/mirumirumi/mirumi-tech-apis/commit/7a8aa6e9be9bbf500edf94491f7512518397cdaa
+
+    # html = convert_to_common_box(html)
+    #################################################
 
     # add date into rewrite box
     html = add_date_into_rewritebox(html)
@@ -32,8 +41,7 @@ def customize_html(html: str) -> str:
 
 
 def remove_n_after_br(html: str) -> str:
-    result: str = html.replace("<br />\n", "<br />")
-    return result
+    return html.replace("<br />\n", "<br />")
 
 
 def add_toc_attrs(html: str) -> str:
